@@ -150,8 +150,7 @@ class SupplierIndexService {
     }
   }
 
-  Future<void> updateSupplierMobile(
-      String supplierName, String mobile) async {
+  Future<void> updateSupplierMobile(String supplierName, String mobile) async {
     await _ensureInitialized();
     final normalized = supplierName.trim().toLowerCase();
     for (var entry in _supplierMap.entries) {
@@ -163,8 +162,7 @@ class SupplierIndexService {
     }
   }
 
-  Future<void> setInitialBalance(
-      String supplierName, double balance) async {
+  Future<void> setInitialBalance(String supplierName, double balance) async {
     await _ensureInitialized();
     final normalized = supplierName.trim().toLowerCase();
     for (var entry in _supplierMap.entries) {
@@ -176,12 +174,22 @@ class SupplierIndexService {
     }
   }
 
+  Future<SupplierData?> getSupplierData(String supplierName) async {
+    await _ensureInitialized();
+    final normalized = supplierName.trim().toLowerCase();
+    for (var entry in _supplierMap.entries) {
+      if (entry.value.name.toLowerCase() == normalized) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
   Future<List<String>> getSuggestions(String query) async {
     await _ensureInitialized();
     if (query.isEmpty) return [];
     return _supplierMap.values
-        .where((s) =>
-            s.name.toLowerCase().contains(query.toLowerCase().trim()))
+        .where((s) => s.name.toLowerCase().contains(query.toLowerCase().trim()))
         .map((s) => s.name)
         .toList();
   }
@@ -195,8 +203,7 @@ class SupplierIndexService {
     await _ensureInitialized();
     int? keyToRemove;
     for (var entry in _supplierMap.entries) {
-      if (entry.value.name.toLowerCase() ==
-          supplierName.trim().toLowerCase()) {
+      if (entry.value.name.toLowerCase() == supplierName.trim().toLowerCase()) {
         keyToRemove = entry.key;
         break;
       }

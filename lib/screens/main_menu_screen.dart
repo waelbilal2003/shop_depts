@@ -1,21 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'customer_management_screen.dart';
 import 'supplier_management_screen.dart';
 import 'preferences_screen.dart';
 import 'sales_screen.dart';
 import 'purchases_screen.dart';
-import 'cashbox_screen.dart';
+import 'box_screen.dart';
 
-class MainMenuScreen extends StatelessWidget {
+class MainMenuScreen extends StatefulWidget {
   final String selectedDate;
 
   const MainMenuScreen({super.key, required this.selectedDate});
 
   @override
+  State<MainMenuScreen> createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> {
+  String _sellerName = '';
+  String _storeName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _sellerName = prefs.getString('seller_name') ?? '';
+      _storeName = prefs.getString('store_name') ?? '';
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('القائمة الرئيسية - $selectedDate'),
+        title: Text('القائمة الرئيسية - ${widget.selectedDate}'),
         backgroundColor: Colors.teal[700],
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -41,7 +64,7 @@ class MainMenuScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                   builder: (_) => CustomerManagementScreen(
-                                      selectedDate: selectedDate)));
+                                      selectedDate: widget.selectedDate)));
                         },
                       ),
                     ),
@@ -57,7 +80,7 @@ class MainMenuScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                   builder: (_) => PreferencesScreen(
-                                      selectedDate: selectedDate)));
+                                      selectedDate: widget.selectedDate)));
                         },
                       ),
                     ),
@@ -73,7 +96,7 @@ class MainMenuScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                   builder: (_) => SupplierManagementScreen(
-                                      selectedDate: selectedDate)));
+                                      selectedDate: widget.selectedDate)));
                         },
                       ),
                     ),
@@ -95,8 +118,8 @@ class MainMenuScreen extends StatelessWidget {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) =>
-                                      SalesScreen(selectedDate: selectedDate)));
+                                  builder: (_) => SalesScreen(
+                                      selectedDate: widget.selectedDate)));
                         },
                       ),
                     ),
@@ -112,25 +135,25 @@ class MainMenuScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                   builder: (_) => PurchasesScreen(
-                                      selectedDate: selectedDate)));
+                                      selectedDate: widget.selectedDate)));
                         },
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Expanded(
-                      child: _buildMenuButton(
-                        context: context,
-                        text: 'الصندوق',
-                        icon: Icons.account_balance_wallet,
-                        color: Colors.purple[700]!,
-                        onPressed: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => CashboxScreen(
-                                      selectedDate: selectedDate)));
-                        },
-                      ),
+                    _buildMenuButton(
+                      context: context,
+                      text: 'الصندوق',
+                      icon: Icons.account_balance_wallet,
+                      color: Colors.amber[800]!, // ← غيّر اللون كما تريد
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => BoxScreen(
+                                    selectedDate: widget.selectedDate,
+                                    sellerName: _sellerName,
+                                    storeName: _storeName)));
+                      },
                     ),
                   ],
                 ),
