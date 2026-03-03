@@ -172,12 +172,12 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
               child: Row(
                 children: const [
                   Expanded(
-                      flex: 3,
+                      flex: 2,
                       child: Text('الاسم',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 11))),
                   Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: Text('الرصيد',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 11),
@@ -214,11 +214,11 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
                           child: Row(
                             children: [
                               Expanded(
-                                  flex: 3,
+                                  flex: 2,
                                   child: Text(supplier.name,
                                       style: const TextStyle(fontSize: 13))),
                               Expanded(
-                                  flex: 2,
+                                  flex: 3,
                                   child: _buildEditableCell(
                                     controller:
                                         _balanceControllers[supplier.name],
@@ -235,8 +235,7 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
                                   child: _buildEditableCell(
                                     controller:
                                         _mobileControllers[supplier.name],
-                                    focusNode:
-                                        _mobileFocusNodes[supplier.name],
+                                    focusNode: _mobileFocusNodes[supplier.name],
                                     isNumeric: true,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly

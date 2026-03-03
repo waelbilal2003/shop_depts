@@ -1329,18 +1329,6 @@ class _BoxScreenState extends State<BoxScreen> {
     );
   }
 
-  Widget _buildMainContent() {
-    // تم إزالة الشريط الأصفر من هنا لأننا نقلناه إلى الـ AppBar
-    return Column(
-      children: [
-        // الجدول الرئيسي
-        Expanded(
-          child: _buildTableWithStickyHeader(),
-        ),
-      ],
-    );
-  }
-
   Widget _buildTableWithStickyHeader() {
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -1772,74 +1760,99 @@ class _BoxScreenState extends State<BoxScreen> {
     }
   }
 
-  Widget _buildAppBarBalanceWidget() {
+  Widget _buildBalanceBar() {
+    if (_lastFetchedBalance == null || _lastAccountName.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // اسم الحساب
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'الحساب',
-                style: TextStyle(fontSize: 10, color: Colors.white70),
-              ),
-              Text(
-                _lastAccountName.length > 12
-                    ? '${_lastAccountName.substring(0, 12)}...'
-                    : _lastAccountName,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          // الرصيد الحالي
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('الرصيد',
-                  style: TextStyle(fontSize: 10, color: Colors.white70)),
-              Text(
-                _lastFetchedBalance?.toStringAsFixed(2) ?? '0.00',
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          // الباقي المتوقع
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('الباقي',
-                  style: TextStyle(fontSize: 10, color: Colors.white70)),
-              Text(
-                _calculatedRemaining?.toStringAsFixed(2) ?? '0.00',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: (_calculatedRemaining ?? 0) >= 0
-                      ? Colors.lightGreenAccent
-                      : Colors.redAccent,
-                ),
-              ),
-            ],
+        color: Colors.blue[900],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // اسم الحساب
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'الحساب',
+                  style: TextStyle(fontSize: 10, color: Colors.white70),
+                ),
+                Text(
+                  _lastAccountName.length > 14
+                      ? '${_lastAccountName.substring(0, 14)}...'
+                      : _lastAccountName,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+              ],
+            ),
+            Container(width: 1, height: 30, color: Colors.white24),
+            // الرصيد الحالي
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('الرصيد',
+                    style: TextStyle(fontSize: 10, color: Colors.white70)),
+                Text(
+                  _lastFetchedBalance?.toStringAsFixed(2) ?? '0.00',
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+              ],
+            ),
+            Container(width: 1, height: 30, color: Colors.white24),
+            // الباقي المتوقع
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('الباقي',
+                    style: TextStyle(fontSize: 10, color: Colors.white70)),
+                Text(
+                  _calculatedRemaining?.toStringAsFixed(2) ?? '0.00',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: (_calculatedRemaining ?? 0) >= 0
+                        ? Colors.lightGreenAccent
+                        : Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    return Column(
+      children: [
+        // مستطيل الرصيد مباشرةً تحت الـ AppBar
+        _buildBalanceBar(),
+        // الجدول الرئيسي
+        Expanded(
+          child: _buildTableWithStickyHeader(),
+        ),
+      ],
     );
   }
 

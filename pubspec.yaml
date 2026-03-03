@@ -41,6 +41,8 @@ dev_dependencies:
   
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/Cairo-Regular.ttf
 
 # 👇 قسم أيقونة التطبيق
 flutter_launcher_icons:
