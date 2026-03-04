@@ -37,7 +37,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color.fromARGB(255, 247, 247, 248),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -135,7 +135,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 Expanded(
                   child: Row(
                     children: [
-                      // العمود الأيمن
+                      // ✅ العمود الأيمن (من الأعلى للأسفل: الزبائن، المبيعات، التفصيلات)
                       Expanded(
                         child: Column(
                           children: [
@@ -164,7 +164,28 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                             Expanded(
                               child: _buildMenuButton(
                                 context: context,
-                                text: 'التفضيلات',
+                                text: 'المبيعات',
+                                icon: Icons.sell_rounded,
+                                gradientColors: const [
+                                  Color(0xFF15803D),
+                                  Color(0xFF166534)
+                                ],
+                                accentColor: Colors.greenAccent,
+                                onPressed: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => SalesScreen(
+                                              selectedDate:
+                                                  widget.selectedDate)));
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Expanded(
+                              child: _buildMenuButton(
+                                context: context,
+                                text: 'التفصيلات',
                                 icon: Icons.tune_rounded,
                                 gradientColors: const [
                                   Color(0xFF475569),
@@ -181,7 +202,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(height: 14),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      // ✅ العمود الأيسر (من الأعلى للأسفل: الموردين، المشتريات، الصندوق)
+                      Expanded(
+                        child: Column(
+                          children: [
                             Expanded(
                               child: _buildMenuButton(
                                 context: context,
@@ -200,34 +228,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                                               SupplierManagementScreen(
                                                   selectedDate:
                                                       widget.selectedDate)));
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      // العمود الأيسر
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: _buildMenuButton(
-                                context: context,
-                                text: 'المبيعات',
-                                icon: Icons.sell_rounded,
-                                gradientColors: const [
-                                  Color(0xFF15803D),
-                                  Color(0xFF166534)
-                                ],
-                                accentColor: Colors.greenAccent,
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) => SalesScreen(
-                                              selectedDate:
-                                                  widget.selectedDate)));
                                 },
                               ),
                             ),
@@ -259,8 +259,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                                 text: 'الصندوق',
                                 icon: Icons.account_balance_wallet_rounded,
                                 gradientColors: const [
-                                  Color(0xFFB45309),
-                                  Color(0xFF92400E)
+                                  Color.fromARGB(255, 243, 163, 13),
+                                  Color.fromARGB(255, 196, 129, 6)
                                 ],
                                 accentColor: Colors.amberAccent,
                                 onPressed: () {
@@ -328,7 +328,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             ),
             child: Stack(
               children: [
-                // خلفية دائرية زخرفية
                 Positioned(
                   top: -20,
                   left: -20,
@@ -341,7 +340,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     ),
                   ),
                 ),
-                // المحتوى المركزي
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

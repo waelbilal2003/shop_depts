@@ -20,7 +20,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('التفضيلات'),
+        title: const Text('التفصيلات'),
         backgroundColor: Colors.blueGrey[600],
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -56,7 +56,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       borderRadius: BorderRadius.circular(12)),
                   elevation: 5,
                 ),
-                child: const Text('تفضيلات الزبائن',
+                child: const Text('تفصيلات الزبائن',
                     style:
                         TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ),
@@ -84,7 +84,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       borderRadius: BorderRadius.circular(12)),
                   elevation: 5,
                 ),
-                child: const Text('تفضيلات الموردين',
+                child: const Text('تفصيلات الموردين',
                     style:
                         TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ),

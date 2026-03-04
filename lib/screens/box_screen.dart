@@ -1146,29 +1146,50 @@ class _BoxScreenState extends State<BoxScreen> {
                             _lastAccountName.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: _buildAppBarBalanceWidget(),
+                            child: _buildBalanceBar(),
                           ),
                         // الجملة تبقى على اليمين
                         Expanded(
                           child: Text(
-                            'يومية الصندوق رقم /$serialNumber/ تاريخ ${widget.selectedDate} البائع ${widget.sellerName}',
+                            'يومية الصندوق \n رقم /$serialNumber/ تاريخ ${widget.selectedDate} البائع ${widget.sellerName}',
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13),
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
                     ),
         ),
         centerTitle: false,
-        backgroundColor: Colors.blue[700],
+        backgroundColor: const Color.fromARGB(255, 243, 163, 13),
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            tooltip: 'تصدير PDF',
-            onPressed: () => _generateAndSharePdf(),
+
+        // ✅ زر الرجوع و PDF معاً في اليسار (leading واحد)
+        leading: Container(
+          width: 100, // عرض ثابت يتسع لزرين
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+                tooltip: 'رجوع',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf),
+                tooltip: 'تصدير PDF',
+                onPressed: () => _generateAndSharePdf(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
+        ),
+
+        // ✅ أزرار الحفظ واليوميات تبقى في اليمين (actions)
+        actions: [
           IconButton(
             icon: _isSaving
                 ? SizedBox(
