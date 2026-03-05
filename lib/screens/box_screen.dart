@@ -494,7 +494,7 @@ class _BoxScreenState extends State<BoxScreen> {
         TableRow(
           decoration: BoxDecoration(color: Colors.grey[200]),
           children: [
-            TableComponents.buildTableHeaderCell('مسلسل'),
+            TableComponents.buildTableHeaderCell('ت'),
             TableComponents.buildTableHeaderCell('مقبوض'),
             TableComponents.buildTableHeaderCell('مدفوع'),
             TableComponents.buildTableHeaderCell('الحساب'),
@@ -1166,12 +1166,15 @@ class _BoxScreenState extends State<BoxScreen> {
                 onClose: () =>
                     _toggleFullScreenSuggestions(type: '', show: false),
               )
-            : Text(
-                'يومية الصندوق \n  رقم /$serialNumber/  ${widget.selectedDate}  ${widget.sellerName}',
-                style: const TextStyle(fontSize: 16, height: 1.2),
-                textAlign: TextAlign.center,
+            : Center(
+                // 👈 أضف Center widget هنا
+                child: Text(
+                  'يومية الصندوق \n  رقم /$serialNumber/  ${widget.selectedDate}  ${widget.sellerName}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16, height: 1.2),
+                  textAlign: TextAlign.center,
+                ),
               ),
-
         // ── Actions: حفظ + تقويم ──
         actions: [
           IconButton(
