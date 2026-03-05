@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/customer_index_service.dart';
 import '../services/sales_storage_service.dart';
 
@@ -26,17 +27,25 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
 
   bool _isLoading = true;
 
-  /// القائمة الكاملة من السجلات — لا تُمسّ أبداً
-  // تهيئة فارغة مضمونة منذ البداية لتجنب null في build
+  /// جميع السجلات المحمّلة من قاعدة البيانات — لا تُمسّ أبداً
   List<Map<String, String>> _allTransactions = <Map<String, String>>[];
 
-  /// القائمة المعروضة — تتحكم بها قاعدة الرصيد فقط
+  /// السجلات المعروضة في الواجهة فعلياً
   List<Map<String, String>> _visibleTransactions = <Map<String, String>>[];
+
+  /// تاريخ التصفير: اللحظة التي أصبح فيها الرصيد صفراً لآخر مرة
+  /// السجلات القديمة (قبل هذا التاريخ) تُخفى إلى الأبد
+  /// null = لم يحدث تصفير بعد
+  DateTime? _zeroBalanceDate;
+
+  /// مفتاح SharedPreferences لحفظ تاريخ التصفير لكل زبون
+  String get _prefKey =>
+      'customer_zero_date_${widget.customer.name.replaceAll(' ', '_')}';
 
   @override
   void initState() {
     super.initState();
-    _loadDetails();
+    _initAndLoad();
   }
 
   /// مستمع: يُستدعى عند تغيّر بيانات الزبون من الوالد
@@ -44,33 +53,114 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
   void didUpdateWidget(CustomerPreferencesScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.customer.balance != widget.customer.balance) {
-      _applyVisibilityRule(widget.customer.balance);
+      _onBalanceChanged(
+          oldBalance: oldWidget.customer.balance,
+          newBalance: widget.customer.balance);
+    }
+  }
+
+  /// تحميل تاريخ التصفير المحفوظ ثم تحميل السجلات
+  Future<void> _initAndLoad() async {
+    await _loadZeroBalanceDate();
+    await _loadDetails();
+  }
+
+  /// قراءة تاريخ التصفير من SharedPreferences
+  Future<void> _loadZeroBalanceDate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_prefKey);
+      if (saved != null) {
+        _zeroBalanceDate = DateTime.tryParse(saved);
+      }
+    } catch (_) {}
+  }
+
+  /// حفظ تاريخ التصفير في SharedPreferences
+  Future<void> _saveZeroBalanceDate(DateTime date) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefKey, date.toIso8601String());
+    } catch (_) {}
+  }
+
+  /// حذف تاريخ التصفير من SharedPreferences (اختياري للمستقبل)
+  ///
+  /*
+  Future<void> _clearZeroBalanceDate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefKey);
+    } catch (_) {}
+  }
+*/
+  /// ─────────────────────────────────────────────────────────────────
+  /// منطق تغيير الرصيد:
+  ///   رصيد جديد = 0  → سجّل تاريخ التصفير الآن، أخفِ كل السجلات
+  ///   رصيد جديد ≠ 0  → أعد حساب المرئي (سجلات ما بعد التصفير فقط)
+  /// ─────────────────────────────────────────────────────────────────
+  Future<void> _onBalanceChanged(
+      {required double oldBalance, required double newBalance}) async {
+    if (newBalance == 0.0) {
+      // سجّل لحظة التصفير وخزّنها
+      final now = DateTime.now();
+      _zeroBalanceDate = now;
+      await _saveZeroBalanceDate(now);
+
+      if (mounted) {
+        setState(() {
+          // لا يوجد سجل بعد لحظة التصفير بعد
+          _visibleTransactions = <Map<String, String>>[];
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('الرصيد أصبح صفراً — تم إخفاء السجلات القديمة نهائياً'),
+            backgroundColor: Colors.teal,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } else {
+      // أعد حساب ما يُعرض بناءً على تاريخ التصفير المحفوظ
+      _applyVisibilityFilter();
     }
   }
 
   /// ─────────────────────────────────────────────────────────────────
-  /// الخوارزمية: إخفاء/إظهار من الواجهة فقط — لا حذف من السجلات
-  ///   رصيد = 0  →  _visibleTransactions = []   (إخفاء)
-  ///   رصيد ≠ 0  →  _visibleTransactions = نسخة من _allTransactions
+  /// فلتر العرض:
+  ///   • إذا لا يوجد تاريخ تصفير → اعرض الكل
+  ///   • إذا يوجد تاريخ تصفير  → اعرض السجلات التي تاريخها > تاريخ التصفير فقط
+  ///
+  /// ⚠️ _allTransactions لا تُعدَّل ولا تُحذف في أي حال
   /// ─────────────────────────────────────────────────────────────────
-  void _applyVisibilityRule(double balance) {
+  void _applyVisibilityFilter() {
     if (!mounted) return;
-    final bool shouldHide = balance == 0.0;
     setState(() {
-      _visibleTransactions = shouldHide
-          ? <Map<String, String>>[]
-          : List<Map<String, String>>.from(_allTransactions);
+      if (_zeroBalanceDate == null) {
+        // لا يوجد تصفير → اعرض الكل
+        _visibleTransactions = List<Map<String, String>>.from(_allTransactions);
+      } else {
+        // اعرض فقط السجلات التي أُضيفت بعد تاريخ التصفير
+        _visibleTransactions = _allTransactions.where((t) {
+          final recordDate = _parseDateFromString(t['date'] ?? '');
+          if (recordDate == null) return false;
+          // نقارن بدقة اليوم فقط (نتجاهل الوقت)
+          final zeroDay = DateTime(
+            _zeroBalanceDate!.year,
+            _zeroBalanceDate!.month,
+            _zeroBalanceDate!.day,
+          );
+          final recordDay = DateTime(
+            recordDate.year,
+            recordDate.month,
+            recordDate.day,
+          );
+          // السجلات التي في نفس يوم التصفير أو بعده تُعرض
+          return !recordDay.isBefore(zeroDay);
+        }).toList();
+      }
     });
-    if (shouldHide && _allTransactions.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('الرصيد أصبح صفراً — تم إخفاء سجلات المسحوبات من العرض'),
-          backgroundColor: Colors.teal,
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
   }
 
   Future<void> _loadDetails() async {
@@ -101,27 +191,22 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
 
     if (!mounted) return;
 
-    // نحدّث _allTransactions و_isLoading ثم نطبّق قاعدة الإخفاء داخل setState واحدة
     setState(() {
       _allTransactions = transactions;
       _isLoading = false;
-      // تطبيق القاعدة مباشرة داخل نفس setState لضمان التزامن
-      _visibleTransactions = (widget.customer.balance == 0.0)
-          ? <Map<String, String>>[]
-          : List<Map<String, String>>.from(transactions);
     });
 
-    // إشعار المستخدم إن كان الرصيد صفراً وتوجد سجلات
-    if (widget.customer.balance == 0.0 && transactions.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('الرصيد أصبح صفراً — تم إخفاء سجلات المسحوبات من العرض'),
-          backgroundColor: Colors.teal,
-          duration: Duration(seconds: 3),
-        ),
-      );
+    // إذا الرصيد الحالي صفر ولم يُسجَّل تاريخ تصفير بعد → سجّله الآن
+    if (widget.customer.balance == 0.0 &&
+        _zeroBalanceDate == null &&
+        transactions.isNotEmpty) {
+      final now = DateTime.now();
+      _zeroBalanceDate = now;
+      await _saveZeroBalanceDate(now);
     }
+
+    // طبّق الفلتر بعد تحديث _allTransactions
+    _applyVisibilityFilter();
   }
 
   // ─── PDF ──────────────────────────────────────────────────────────
@@ -183,7 +268,6 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                       ),
                     ),
                     pw.SizedBox(height: 14),
-                    // بطاقة المعلومات — بدون إيموجي لتجنب مشاكل الخط
                     pw.Container(
                       decoration: pw.BoxDecoration(
                         border: pw.Border.all(color: borderColor, width: 0.8),
@@ -348,7 +432,6 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // حساب آمن — _visibleTransactions مضمون التهيئة دائماً
     final double totalVisible = _visibleTransactions.fold<double>(
         0.0, (sum, p) => sum + (double.tryParse(p['value'] ?? '0') ?? 0));
 
@@ -540,5 +623,17 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
     final parts = dateStr.split('/');
     return DateTime(
         int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+  }
+
+  /// تحويل تاريخ بصيغة yyyy/M/d إلى DateTime
+  DateTime? _parseDateFromString(String dateStr) {
+    try {
+      final parts = dateStr.split('/');
+      if (parts.length != 3) return null;
+      return DateTime(
+          int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    } catch (_) {
+      return null;
+    }
   }
 }

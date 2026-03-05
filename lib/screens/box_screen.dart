@@ -1121,78 +1121,62 @@ class _BoxScreenState extends State<BoxScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child:
-              _showFullScreenSuggestions && _getSuggestionsByType().isNotEmpty
-                  ? SuggestionsBanner(
-                      suggestions: _getSuggestionsByType(),
-                      type: _currentSuggestionType,
-                      currentRowIndex: _getCurrentRowIndexByType(),
-                      scrollController: _horizontalSuggestionsController,
-                      onSelect: (val, idx) {
-                        if (_currentSuggestionType == 'customer')
-                          _selectCustomerSuggestion(val, idx);
-                        if (_currentSuggestionType == 'supplier')
-                          _selectSupplierSuggestion(val, idx);
-                      },
-                      onClose: () =>
-                          _toggleFullScreenSuggestions(type: '', show: false),
-                    )
-                  : Row(
-                      children: [
-                        // شريط الرصيد على اليسار تماماً مثل شريط الاقتراحات
-                        if (_lastFetchedBalance != null &&
-                            _lastAccountName.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: _buildBalanceBar(),
-                          ),
-                        // الجملة تبقى على اليمين
-                        Expanded(
-                          child: Text(
-                            'يومية الصندوق \n رقم /$serialNumber/ تاريخ ${widget.selectedDate} البائع ${widget.sellerName}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-        ),
-        centerTitle: false,
         backgroundColor: const Color.fromARGB(255, 243, 163, 13),
         foregroundColor: Colors.white,
+        centerTitle: false,
+        titleSpacing: 0,
 
-        // ✅ زر الرجوع و PDF معاً في اليسار (leading واحد)
-        leading: Container(
-          width: 100, // عرض ثابت يتسع لزرين
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
-                tooltip: 'رجوع',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              IconButton(
-                icon: const Icon(Icons.picture_as_pdf),
-                tooltip: 'تصدير PDF',
-                onPressed: () => _generateAndSharePdf(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
+        // ── Leading: رجوع + PDF ──
+        leadingWidth: 88,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.arrow_back, size: 22),
+              onPressed: () => Navigator.pop(context),
+              tooltip: 'رجوع',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf, size: 22),
+              tooltip: 'تصدير PDF',
+              onPressed: () => _generateAndSharePdf(),
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+          ],
         ),
 
-        // ✅ أزرار الحفظ واليوميات تبقى في اليمين (actions)
+        // ── Title: عنوان اليومية دائماً ثابت + شريط الاقتراحات فوقه ──
+        title: _showFullScreenSuggestions && _getSuggestionsByType().isNotEmpty
+            ? SuggestionsBanner(
+                suggestions: _getSuggestionsByType(),
+                type: _currentSuggestionType,
+                currentRowIndex: _getCurrentRowIndexByType(),
+                scrollController: _horizontalSuggestionsController,
+                onSelect: (val, idx) {
+                  if (_currentSuggestionType == 'customer')
+                    _selectCustomerSuggestion(val, idx);
+                  if (_currentSuggestionType == 'supplier')
+                    _selectSupplierSuggestion(val, idx);
+                },
+                onClose: () =>
+                    _toggleFullScreenSuggestions(type: '', show: false),
+              )
+            : Text(
+                'يومية الصندوق \n  رقم /$serialNumber/  ${widget.selectedDate}  ${widget.sellerName}',
+                style: const TextStyle(fontSize: 16, height: 1.2),
+                textAlign: TextAlign.center,
+              ),
+
+        // ── Actions: حفظ + تقويم ──
         actions: [
           IconButton(
             icon: _isSaving
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -1202,7 +1186,7 @@ class _BoxScreenState extends State<BoxScreen> {
                   )
                 : Stack(
                     children: [
-                      const Icon(Icons.save),
+                      const Icon(Icons.save, size: 22),
                       if (_hasUnsavedChanges)
                         Positioned(
                           right: 0,
@@ -1217,10 +1201,7 @@ class _BoxScreenState extends State<BoxScreen> {
                               minWidth: 12,
                               minHeight: 12,
                             ),
-                            child: const SizedBox(
-                              width: 8,
-                              height: 8,
-                            ),
+                            child: const SizedBox(width: 8, height: 8),
                           ),
                         ),
                     ],
@@ -1228,15 +1209,14 @@ class _BoxScreenState extends State<BoxScreen> {
             tooltip: _hasUnsavedChanges
                 ? 'هناك تغييرات غير محفوظة - انقر للحفظ'
                 : 'حفظ اليومية',
-            onPressed: _isSaving
-                ? null
-                : () {
-                    _saveCurrentRecord();
-                  },
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            onPressed: _isSaving ? null : () => _saveCurrentRecord(),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.calendar_month),
+            icon: const Icon(Icons.calendar_month, size: 22),
             tooltip: 'فتح يومية سابقة',
+            padding: const EdgeInsets.all(8),
             onSelected: (selectedDate) async {
               if (selectedDate != widget.selectedDate) {
                 if (_hasUnsavedChanges) {
@@ -1245,7 +1225,6 @@ class _BoxScreenState extends State<BoxScreen> {
                     await _saveCurrentRecord(silent: true);
                   }
                 }
-
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
@@ -1260,62 +1239,51 @@ class _BoxScreenState extends State<BoxScreen> {
             },
             itemBuilder: (BuildContext context) {
               List<PopupMenuEntry<String>> items = [];
-
               if (_isLoadingDates) {
-                items.add(
-                  const PopupMenuItem<String>(
-                    value: '',
-                    enabled: false,
-                    child: Text('جاري التحميل...'),
-                  ),
-                );
+                items.add(const PopupMenuItem<String>(
+                  value: '',
+                  enabled: false,
+                  child: Text('جاري التحميل...'),
+                ));
               } else if (_availableDates.isEmpty) {
-                items.add(
-                  const PopupMenuItem<String>(
-                    value: '',
-                    enabled: false,
-                    child: Text('لا توجد يوميات سابقة'),
-                  ),
-                );
+                items.add(const PopupMenuItem<String>(
+                  value: '',
+                  enabled: false,
+                  child: Text('لا توجد يوميات سابقة'),
+                ));
               } else {
-                items.add(
-                  const PopupMenuItem<String>(
-                    value: '',
-                    enabled: false,
-                    child: Text(
-                      'اليوميات المتاحة',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                items.add(const PopupMenuItem<String>(
+                  value: '',
+                  enabled: false,
+                  child: Text(
+                    'اليوميات المتاحة',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                );
+                ));
                 items.add(const PopupMenuDivider());
-
                 for (var dateInfo in _availableDates) {
                   final date = dateInfo['date']!;
                   final journalNumber = dateInfo['journalNumber']!;
-
-                  items.add(
-                    PopupMenuItem<String>(
-                      value: date,
-                      child: Text(
-                        'يومية رقم $journalNumber - تاريخ $date',
-                        style: TextStyle(
-                          fontWeight: date == widget.selectedDate
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: date == widget.selectedDate
-                              ? Colors.blue
-                              : Colors.black,
-                        ),
+                  items.add(PopupMenuItem<String>(
+                    value: date,
+                    child: Text(
+                      'يومية رقم $journalNumber - تاريخ $date',
+                      style: TextStyle(
+                        fontWeight: date == widget.selectedDate
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: date == widget.selectedDate
+                            ? Colors.blue
+                            : Colors.black,
                       ),
                     ),
-                  );
+                  ));
                 }
               }
-
               return items;
             },
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: _buildMainContent(),
@@ -1324,7 +1292,8 @@ class _BoxScreenState extends State<BoxScreen> {
           : Container(
               margin: const EdgeInsets.only(bottom: 16, right: 16),
               child: Material(
-                color: Colors.blue[700],
+                color: const Color.fromARGB(
+                    255, 220, 145, 5), // أغمق قليلاً من AppBar للتمييز
                 borderRadius: BorderRadius.circular(12),
                 elevation: 8,
                 child: InkWell(
@@ -1891,12 +1860,13 @@ class _BoxScreenState extends State<BoxScreen> {
         arabicFont = pw.Font.courier();
       }
 
-      final PdfColor headerColor = PdfColor.fromInt(0xFF1976D2);
+      final PdfColor headerColor =
+          PdfColor.fromInt(0xFFF3A30D); // برتقالي AppBar
       final PdfColor headerTextColor = PdfColors.white;
       final PdfColor rowEvenColor = PdfColors.white;
-      final PdfColor rowOddColor = PdfColor.fromInt(0xFFBBDEFB);
+      final PdfColor rowOddColor =
+          PdfColor.fromInt(0xFFFFF3E0); // برتقالي فاتح جداً
       final PdfColor borderColor = PdfColor.fromInt(0xFFE0E0E0);
-
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
