@@ -79,17 +79,31 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
       if (boxDoc != null) {
         for (var t in boxDoc.transactions) {
           if (t.accountType == 'زبون' &&
-              t.accountName == widget.customer.name &&
-              t.paid.isNotEmpty &&
-              t.paid != '0' &&
-              t.paid != '0.0' &&
-              t.paid != '0.00') {
-            transactions.add({
-              'date': dateString,
-              'value': t.paid,
-              'notes': t.notes.isNotEmpty ? t.notes : 'مدفوع من الصندوق',
-              'source': 'box',
-            });
+              t.accountName == widget.customer.name) {
+            // المدفوع
+            if (t.paid.isNotEmpty &&
+                t.paid != '0' &&
+                t.paid != '0.0' &&
+                t.paid != '0.00') {
+              transactions.add({
+                'date': dateString,
+                'value': t.paid,
+                'notes': t.notes.isNotEmpty ? t.notes : 'مدفوع من الصندوق',
+                'source': 'box_paid',
+              });
+            }
+            // المقبوض
+            if (t.received.isNotEmpty &&
+                t.received != '0' &&
+                t.received != '0.0' &&
+                t.received != '0.00') {
+              transactions.add({
+                'date': dateString,
+                'value': t.received,
+                'notes': t.notes.isNotEmpty ? t.notes : 'مقبوض من الصندوق',
+                'source': 'box_received',
+              });
+            }
           }
         }
       }
@@ -527,8 +541,11 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                             final p = entry.value;
                             final color =
                                 idx % 2 == 0 ? rowEvenColor : rowOddColor;
-                            final sourceLabel =
-                                p['source'] == 'box' ? 'صندوق' : 'مبيعات';
+                            final sourceLabel = p['source'] == 'box_received'
+                                ? 'مقبوض'
+                                : p['source'] == 'box_paid'
+                                    ? 'مدفوع'
+                                    : 'مبيعات';
                             return pw.TableRow(
                               decoration: pw.BoxDecoration(color: color),
                               children: [
@@ -835,7 +852,10 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                                     ],
                                   ),
                                   ..._visibleTransactions.map((p) {
-                                    final isBox = p['source'] == 'box';
+                                    final isBox = p['source'] == 'box_paid' ||
+                                        p['source'] == 'box_received';
+                                    final isBoxReceived =
+                                        p['source'] == 'box_received';
                                     return TableRow(
                                       decoration: BoxDecoration(
                                         color: isBox ? Colors.teal[50] : null,
@@ -845,13 +865,13 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                                             padding: const EdgeInsets.all(6),
                                             child: Text(p['date'] ?? '',
                                                 style: const TextStyle(
-                                                    fontSize: 11),
+                                                    fontSize: 9),
                                                 textAlign: TextAlign.center)),
                                         Padding(
                                             padding: const EdgeInsets.all(6),
                                             child: Text(p['value'] ?? '',
                                                 style: const TextStyle(
-                                                    fontSize: 11,
+                                                    fontSize: 10,
                                                     fontWeight:
                                                         FontWeight.bold),
                                                 textAlign: TextAlign.center)),
@@ -861,19 +881,27 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 4, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: isBox
-                                                  ? Colors.teal[100]
-                                                  : Colors.green[50],
+                                              color: isBoxReceived
+                                                  ? Colors.orange[100]
+                                                  : isBox
+                                                      ? Colors.teal[100]
+                                                      : Colors.green[50],
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                             ),
                                             child: Text(
-                                              isBox ? 'صندوق' : 'مبيعات',
+                                              isBoxReceived
+                                                  ? 'مقبوض'
+                                                  : isBox
+                                                      ? 'مدفوع'
+                                                      : 'مبيعات',
                                               style: TextStyle(
                                                   fontSize: 10,
-                                                  color: isBox
-                                                      ? Colors.teal[800]
-                                                      : Colors.green[700],
+                                                  color: isBoxReceived
+                                                      ? Colors.orange[800]
+                                                      : isBox
+                                                          ? Colors.teal[800]
+                                                          : Colors.green[700],
                                                   fontWeight: FontWeight.bold),
                                               textAlign: TextAlign.center,
                                             ),

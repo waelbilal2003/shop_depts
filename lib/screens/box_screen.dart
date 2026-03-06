@@ -61,7 +61,7 @@ class _BoxScreenState extends State<BoxScreen> {
   late TextEditingController totalPaidController;
 
   // قوائم الخيارات
-  final List<String> accountTypeOptions = ['زبون', 'مورد', 'مصروف'];
+  final List<String> accountTypeOptions = ['زبون', 'مورد'];
 
   // متحكمات للتمرير
   final ScrollController _verticalScrollController = ScrollController();
@@ -322,20 +322,6 @@ class _BoxScreenState extends State<BoxScreen> {
         _updateCustomerSuggestions(rowIndex);
       } else if (accountTypeValues[rowIndex] == 'مورد') {
         _updateSupplierSuggestions(rowIndex);
-      } else {
-        // إذا كان نوع الحساب "مصروف" أو أي شيء آخر
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _customerSuggestions = [];
-              _supplierSuggestions = [];
-              _activeCustomerRowIndex = null;
-              _activeSupplierRowIndex = null;
-              _showFullScreenSuggestions = false;
-              _currentSuggestionType = '';
-            });
-          }
-        });
       }
     });
 
@@ -731,7 +717,7 @@ class _BoxScreenState extends State<BoxScreen> {
 
     Widget cellContent;
 
-    // إذا كان نوع الحساب تم اختياره (زبون، مورد، أو مصروف)
+    // إذا كان نوع الحساب تم اختياره (زبون، مورد)
     if (accountType.isNotEmpty) {
       cellContent = Container(
         padding: const EdgeInsets.all(1),
@@ -931,8 +917,6 @@ class _BoxScreenState extends State<BoxScreen> {
         return Colors.green;
       case 'مورد':
         return Colors.blue;
-      case 'مصروف':
-        return Colors.orange;
       default:
         return Colors.grey;
     }
@@ -944,8 +928,6 @@ class _BoxScreenState extends State<BoxScreen> {
         return 'اسم الزبون';
       case 'مورد':
         return 'اسم المورد';
-      case 'مصروف':
-        return 'نوع المصروف';
       default:
         return '...';
     }
@@ -1167,9 +1149,8 @@ class _BoxScreenState extends State<BoxScreen> {
                     _toggleFullScreenSuggestions(type: '', show: false),
               )
             : Center(
-                // 👈 أضف Center widget هنا
                 child: Text(
-                  'يومية الصندوق \n  رقم /$serialNumber/  ${widget.selectedDate}  ${widget.sellerName}',
+                  'يومية الصندوق \n  بتاريخ  ${widget.selectedDate}',
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 16, height: 1.2),
                   textAlign: TextAlign.center,
@@ -1266,11 +1247,11 @@ class _BoxScreenState extends State<BoxScreen> {
                 items.add(const PopupMenuDivider());
                 for (var dateInfo in _availableDates) {
                   final date = dateInfo['date']!;
-                  final journalNumber = dateInfo['journalNumber']!;
+
                   items.add(PopupMenuItem<String>(
                     value: date,
                     child: Text(
-                      'يومية رقم $journalNumber - تاريخ $date',
+                      'يومية تاريخ $date',
                       style: TextStyle(
                         fontWeight: date == widget.selectedDate
                             ? FontWeight.bold
@@ -1725,7 +1706,6 @@ class _BoxScreenState extends State<BoxScreen> {
         final supplierData = await _supplierIndexService.getSupplierData(name);
         realBalance = supplierData?.balance ?? 0.0;
       } else {
-        // نوع الحساب "مصروف" - نبقي الشريط معروضاً
         return;
       }
 

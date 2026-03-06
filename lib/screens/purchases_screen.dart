@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'dart:io';
+import 'dart:convert';
 import '../models/payment_model.dart';
 import '../services/purchases_storage_service.dart';
 import '../services/supplier_index_service.dart';
 import '../widgets/table_components.dart' as TableComponents;
 import '../widgets/suggestions_banner.dart';
 import 'supplier_management_screen.dart';
+import 'package:path_provider/path_provider.dart';
 
 class PurchasesScreen extends StatefulWidget {
   final String selectedDate;
@@ -36,9 +39,12 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
   bool _hasUnsavedChanges = false;
 
   List<String> _supplierSuggestions = [];
-  int? _activeSupplierRowIndex;
+  int? _activeSupplierRowIndex = null;
   bool _showFullScreenSuggestions = false;
   late ScrollController _suggestionsScrollController;
+
+  List<Map<String, String>> _availableDates = [];
+  bool _isLoadingDates = false;
 
   Timer? _calculateTotalsDebouncer;
 
@@ -53,6 +59,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadOrCreate();
+      _loadAvailableDates();
     });
   }
 
@@ -77,6 +84,52 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     _suggestionsScrollController.dispose();
     _calculateTotalsDebouncer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadAvailableDates() async {
+    if (_isLoadingDates) return;
+    setState(() => _isLoadingDates = true);
+    try {
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = await getExternalStorageDirectory();
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+      final folderPath = '${directory!.path}/PurchasesJournals';
+      final folder = Directory(folderPath);
+      if (!await folder.exists()) {
+        setState(() {
+          _availableDates = [];
+          _isLoadingDates = false;
+        });
+        return;
+      }
+      final files = await folder.list().toList();
+      final dates = <Map<String, String>>[];
+      for (var file in files) {
+        if (file is File && file.path.endsWith('.json')) {
+          try {
+            final jsonString = await file.readAsString();
+            final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+            final date = jsonMap['date']?.toString() ?? '';
+            if (date.isNotEmpty) {
+              dates.add({'date': date});
+            }
+          } catch (_) {}
+        }
+      }
+      dates.sort((a, b) => (a['date'] ?? '').compareTo(b['date'] ?? ''));
+      setState(() {
+        _availableDates = dates;
+        _isLoadingDates = false;
+      });
+    } catch (e) {
+      setState(() {
+        _availableDates = [];
+        _isLoadingDates = false;
+      });
+    }
   }
 
   void _hideSuggestions() {
@@ -132,8 +185,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
         rowControllers.add(newControllers);
         rowFocusNodes.add(List.generate(4, (_) => FocusNode()));
       }
-      totalPaymentsController.text =
-          document.totals['totalPayments'] ?? '0.00';
+      totalPaymentsController.text = document.totals['totalPayments'] ?? '0.00';
       _hasUnsavedChanges = false;
     });
   }
@@ -345,6 +397,69 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                 _loadOrCreate();
               },
             ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.calendar_month, size: 22),
+              tooltip: 'فتح يومية سابقة',
+              onSelected: (selectedDate) async {
+                if (selectedDate != widget.selectedDate) {
+                  if (_hasUnsavedChanges) {
+                    await _saveCurrentRecord(silent: true);
+                  }
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PurchasesScreen(
+                        selectedDate: selectedDate,
+                      ),
+                    ),
+                  );
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                List<PopupMenuEntry<String>> items = [];
+                if (_isLoadingDates) {
+                  items.add(const PopupMenuItem<String>(
+                    value: '',
+                    enabled: false,
+                    child: Text('جاري التحميل...'),
+                  ));
+                } else if (_availableDates.isEmpty) {
+                  items.add(const PopupMenuItem<String>(
+                    value: '',
+                    enabled: false,
+                    child: Text('لا توجد يوميات سابقة'),
+                  ));
+                } else {
+                  items.add(const PopupMenuItem<String>(
+                    value: '',
+                    enabled: false,
+                    child: Text(
+                      'اليوميات المتاحة',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ));
+                  items.add(const PopupMenuDivider());
+                  for (var dateInfo in _availableDates) {
+                    final date = dateInfo['date']!;
+                    items.add(PopupMenuItem<String>(
+                      value: date,
+                      child: Text(
+                        'يومية تاريخ $date',
+                        style: TextStyle(
+                          fontWeight: date == widget.selectedDate
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: date == widget.selectedDate
+                              ? Colors.blue
+                              : Colors.black,
+                        ),
+                      ),
+                    ));
+                  }
+                }
+                return items;
+              },
+            ),
             IconButton(
               icon: _isSaving
                   ? const SizedBox(
@@ -493,8 +608,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
         style: TextStyle(
             fontSize: 13,
             color: Colors.black,
-            fontWeight:
-                colIndex == 1 ? FontWeight.bold : FontWeight.normal),
+            fontWeight: colIndex == 1 ? FontWeight.bold : FontWeight.normal),
         textAlign: isNumeric ? TextAlign.center : TextAlign.right,
         keyboardType: isNumeric
             ? const TextInputType.numberWithOptions(decimal: true)
