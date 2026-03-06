@@ -141,125 +141,201 @@ class _SupplierPreferencesScreenState extends State<SupplierPreferencesScreen> {
     _applyFilter();
   }
 
-  // ─── نافذة اختيار نطاق التاريخ (إدخال نصي) ─────────────────────
+  // ─── نافذة اختيار نطاق التاريخ (picker مصغّر) ───────────────────
 
   Future<void> _showDateRangeDialog() async {
-    String _fmt(DateTime? d) =>
-        d == null ? '' : '${d.year}/${d.month}/${d.day}';
+    final now = DateTime.now();
+    DateTime tempFrom = _filterFrom ?? now;
+    DateTime tempTo = _filterTo ?? now;
 
-    final fromCtrl = TextEditingController(text: _fmt(_filterFrom));
-    final toCtrl = TextEditingController(text: _fmt(_filterTo));
-    String? errorMsg;
+    // دالة مساعدة: تأكد أن اليوم لا يتجاوز أيام الشهر
+    DateTime _clampDay(int y, int m, int d) {
+      final max = DateUtils.getDaysInMonth(y, m);
+      return DateTime(y, m, d > max ? max : d);
+    }
+
+    const months = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر'
+    ];
+
+    // أداة picker مصغّرة لعمود واحد (يوم أو شهر أو سنة)
+    Widget miniPicker({
+      required String label,
+      required String display,
+      required VoidCallback onUp,
+      required VoidCallback onDown,
+      required Color color,
+    }) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+          const SizedBox(height: 2),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 28,
+                  width: 28,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: Icon(Icons.arrow_drop_up,
+                        size: 22, color: Colors.green[600]),
+                    onPressed: onUp,
+                  ),
+                ),
+                SizedBox(
+                  height: 26,
+                  child: Center(
+                    child: Text(display,
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                SizedBox(
+                  height: 28,
+                  width: 28,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: Icon(Icons.arrow_drop_down,
+                        size: 22, color: Colors.red[600]),
+                    onPressed: onDown,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // بناء صف الـ picker الكامل لتاريخ واحد
+    Widget datePicker({
+      required String sectionLabel,
+      required DateTime date,
+      required Color color,
+      required void Function(DateTime) onChanged,
+    }) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calendar_today, size: 13, color: color),
+              const SizedBox(width: 4),
+              Text(sectionLabel,
+                  style: TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+              const SizedBox(width: 8),
+              Text(
+                '${date.year}/${date.month}/${date.day}',
+                style: TextStyle(
+                    fontSize: 12, color: color, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // اليوم
+              miniPicker(
+                label: 'اليوم',
+                display: date.day.toString(),
+                color: color,
+                onUp: () =>
+                    onChanged(_clampDay(date.year, date.month, date.day + 1)),
+                onDown: () =>
+                    onChanged(_clampDay(date.year, date.month, date.day - 1)),
+              ),
+              // الشهر
+              miniPicker(
+                label: 'الشهر',
+                display: months[date.month - 1],
+                color: color,
+                onUp: () {
+                  final m = date.month < 12 ? date.month + 1 : 1;
+                  onChanged(_clampDay(date.year, m, date.day));
+                },
+                onDown: () {
+                  final m = date.month > 1 ? date.month - 1 : 12;
+                  onChanged(_clampDay(date.year, m, date.day));
+                },
+              ),
+              // السنة
+              miniPicker(
+                label: 'السنة',
+                display: date.year.toString(),
+                color: color,
+                onUp: () =>
+                    onChanged(_clampDay(date.year + 1, date.month, date.day)),
+                onDown: () =>
+                    onChanged(_clampDay(date.year - 1, date.month, date.day)),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
 
     await showDialog(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDialogState) {
-          Widget dateField({
-            required TextEditingController controller,
-            required String label,
-            required Color accentColor,
-          }) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 16, color: accentColor),
-                    const SizedBox(width: 6),
-                    Text(label,
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: accentColor)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                  decoration: InputDecoration(
-                    hintText: 'مثال: 2026/1/15',
-                    hintStyle:
-                        const TextStyle(color: Colors.grey, fontSize: 13),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: accentColor, width: 2),
-                    ),
-                    suffixIcon: controller.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              setDialogState(() => controller.clear());
-                            },
-                          )
-                        : null,
-                  ),
-                  onChanged: (_) => setDialogState(() {}),
-                ),
-              ],
-            );
-          }
-
           return Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
+              titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               title: const Row(
                 children: [
                   Icon(Icons.date_range, color: Colors.brown),
                   SizedBox(width: 8),
                   Text('فلترة بالتاريخ',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ],
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  dateField(
-                    controller: fromCtrl,
-                    label: 'من تاريخ',
-                    accentColor: Colors.brown[700]!,
+                  // ── من تاريخ ──
+                  datePicker(
+                    sectionLabel: 'من تاريخ',
+                    date: tempFrom,
+                    color: Colors.brown[700]!,
+                    onChanged: (d) => setDialogState(() => tempFrom = d),
                   ),
-                  const SizedBox(height: 16),
-                  dateField(
-                    controller: toCtrl,
-                    label: 'إلى تاريخ',
-                    accentColor: Colors.brown[700]!,
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(height: 1),
                   ),
-                  if (errorMsg != null) ...[
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(Icons.error_outline,
-                            color: Colors.red, size: 16),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(errorMsg!,
-                              style: const TextStyle(
-                                  color: Colors.red, fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'أدخل التاريخ بصيغة: سنة/شهر/يوم\nمثال: 2026/1/15',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
+                  // ── إلى تاريخ ──
+                  datePicker(
+                    sectionLabel: 'إلى تاريخ',
+                    date: tempTo,
+                    color: Colors.brown[800]!,
+                    onChanged: (d) => setDialogState(() => tempTo = d),
                   ),
                 ],
               ),
@@ -284,34 +360,19 @@ class _SupplierPreferencesScreenState extends State<SupplierPreferencesScreen> {
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.brown[700]),
                   onPressed: () {
-                    DateTime? from;
-                    DateTime? to;
-
-                    if (fromCtrl.text.trim().isNotEmpty) {
-                      from = _parseDateFromString(fromCtrl.text.trim());
-                      if (from == null) {
-                        setDialogState(
-                            () => errorMsg = 'تاريخ البداية غير صحيح');
-                        return;
-                      }
-                    }
-                    if (toCtrl.text.trim().isNotEmpty) {
-                      to = _parseDateFromString(toCtrl.text.trim());
-                      if (to == null) {
-                        setDialogState(
-                            () => errorMsg = 'تاريخ النهاية غير صحيح');
-                        return;
-                      }
-                    }
-                    if (from != null && to != null && from.isAfter(to)) {
-                      setDialogState(() =>
-                          errorMsg = 'تاريخ البداية يجب أن يكون قبل النهاية');
+                    if (tempFrom.isAfter(tempTo)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('تاريخ البداية يجب أن يكون قبل النهاية'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
                       return;
                     }
-
                     setState(() {
-                      _filterFrom = from;
-                      _filterTo = to;
+                      _filterFrom = tempFrom;
+                      _filterTo = tempTo;
                     });
                     _applyFilter();
                     Navigator.pop(ctx);
