@@ -460,37 +460,6 @@ class _SalesScreenState extends State<SalesScreen> {
                 return items;
               },
             ),
-            IconButton(
-              icon: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white)))
-                  : Stack(
-                      children: [
-                        const Icon(Icons.save),
-                        if (_hasUnsavedChanges)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(6)),
-                              constraints: const BoxConstraints(
-                                  minWidth: 12, minHeight: 12),
-                              child: const SizedBox(width: 8, height: 8),
-                            ),
-                          ),
-                      ],
-                    ),
-              tooltip: 'حفظ',
-              onPressed: _isSaving ? null : () => _saveCurrentRecord(),
-            ),
           ],
         ),
         body: _buildTableWithStickyHeader(),

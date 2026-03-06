@@ -417,8 +417,12 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
 
       final displayList = List<Map<String, String>>.from(_visibleTransactions);
 
-      final double totalTransactions = displayList.fold<double>(
-          0.0, (sum, p) => sum + (double.tryParse(p['value'] ?? '0') ?? 0));
+      // الزبون: مبيعات + صندوق مدفوع = يُجمع | صندوق مقبوض = يُطرح
+      final double totalTransactions = displayList.fold<double>(0.0, (sum, p) {
+        final val = double.tryParse(p['value'] ?? '0') ?? 0;
+        if (p['source'] == 'box_received') return sum - val;
+        return sum + val;
+      });
 
       final balanceStr = widget.customer.balance
           .toStringAsFixed(2)
@@ -560,10 +564,10 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                             decoration: pw.BoxDecoration(
                                 color: PdfColor.fromInt(0xFF80CBC4)),
                             children: [
-                              _buildPdfCell('المجموع', isBold: true),
+                              _buildPdfCell(''),
                               _buildPdfCell(totalStr, isBold: true),
                               _buildPdfCell(''),
-                              _buildPdfCell(''),
+                              _buildPdfCell('المجموع', isBold: true),
                             ],
                           ),
                         ],
@@ -638,8 +642,13 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double totalVisible = _visibleTransactions.fold<double>(
-        0.0, (sum, p) => sum + (double.tryParse(p['value'] ?? '0') ?? 0));
+    // الزبون: مبيعات + صندوق مدفوع = يُجمع | صندوق مقبوض = يُطرح
+    final double totalVisible =
+        _visibleTransactions.fold<double>(0.0, (sum, p) {
+      final val = double.tryParse(p['value'] ?? '0') ?? 0;
+      if (p['source'] == 'box_received') return sum - val;
+      return sum + val;
+    });
 
     final bool hasFilter = _filterFrom != null || _filterTo != null;
 
@@ -811,10 +820,10 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                                 border: TableBorder.all(
                                     color: Colors.grey.shade300),
                                 columnWidths: const {
-                                  0: FlexColumnWidth(2),
+                                  0: FlexColumnWidth(1.6),
                                   1: FlexColumnWidth(2),
-                                  2: FlexColumnWidth(1.4),
-                                  3: FlexColumnWidth(2.6),
+                                  2: FlexColumnWidth(2),
+                                  3: FlexColumnWidth(2.4),
                                 },
                                 children: [
                                   TableRow(
