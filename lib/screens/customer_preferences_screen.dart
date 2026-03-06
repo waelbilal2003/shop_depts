@@ -22,8 +22,7 @@ class CustomerPreferencesScreen extends StatefulWidget {
       _CustomerPreferencesScreenState();
 }
 
-class _CustomerPreferencesScreenState
-    extends State<CustomerPreferencesScreen> {
+class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
   final SalesStorageService _salesService = SalesStorageService();
   final BoxStorageService _boxService = BoxStorageService();
 
@@ -54,9 +53,7 @@ class _CustomerPreferencesScreenState
 
     final List<Map<String, String>> transactions = <Map<String, String>>[];
 
-    for (int i = 0;
-        i <= selectedDate.difference(firstDayOfYear).inDays;
-        i++) {
+    for (int i = 0; i <= selectedDate.difference(firstDayOfYear).inDays; i++) {
       final currentDate = firstDayOfYear.add(Duration(days: i));
       final dateString =
           '${currentDate.year}/${currentDate.month}/${currentDate.day}';
@@ -122,8 +119,7 @@ class _CustomerPreferencesScreenState
     if (!mounted) return;
     setState(() {
       if (_filterFrom == null && _filterTo == null) {
-        _visibleTransactions =
-            List<Map<String, String>>.from(_allTransactions);
+        _visibleTransactions = List<Map<String, String>>.from(_allTransactions);
       } else {
         _visibleTransactions = _allTransactions.where((t) {
           final d = _parseDateFromString(t['date'] ?? '');
@@ -145,16 +141,71 @@ class _CustomerPreferencesScreenState
     _applyFilter();
   }
 
-  // ─── نافذة اختيار نطاق التاريخ ───────────────────────────────────
+  // ─── نافذة اختيار نطاق التاريخ (إدخال نصي) ─────────────────────
 
   Future<void> _showDateRangeDialog() async {
-    DateTime? tempFrom = _filterFrom;
-    DateTime? tempTo = _filterTo;
+    String _fmt(DateTime? d) =>
+        d == null ? '' : '${d.year}/${d.month}/${d.day}';
+
+    final fromCtrl = TextEditingController(text: _fmt(_filterFrom));
+    final toCtrl = TextEditingController(text: _fmt(_filterTo));
+    String? errorMsg;
 
     await showDialog(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDialogState) {
+          Widget dateField({
+            required TextEditingController controller,
+            required String label,
+            required Color accentColor,
+          }) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 16, color: accentColor),
+                    const SizedBox(width: 6),
+                    Text(label,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: accentColor)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    hintText: 'مثال: 2026/1/15',
+                    hintStyle:
+                        const TextStyle(color: Colors.grey, fontSize: 13),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: accentColor, width: 2),
+                    ),
+                    suffixIcon: controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              setDialogState(() => controller.clear());
+                            },
+                          )
+                        : null,
+                  ),
+                  onChanged: (_) => setDialogState(() {}),
+                ),
+              ],
+            );
+          }
+
           return Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
@@ -171,65 +222,44 @@ class _CustomerPreferencesScreenState
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // من تاريخ
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading:
-                        Icon(Icons.calendar_today, color: Colors.teal[700]),
-                    title: const Text('من تاريخ'),
-                    subtitle: Text(
-                      tempFrom == null
-                          ? 'اختر تاريخاً'
-                          : '${tempFrom!.year}/${tempFrom!.month}/${tempFrom!.day}',
-                      style: TextStyle(
-                          color: tempFrom == null
-                              ? Colors.grey
-                              : Colors.teal[800],
-                          fontWeight: FontWeight.bold),
-                    ),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: ctx,
-                        initialDate: tempFrom ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('ar'),
-                      );
-                      if (picked != null) {
-                        setDialogState(() => tempFrom =
-                            DateTime(picked.year, picked.month, picked.day));
-                      }
-                    },
+                  dateField(
+                    controller: fromCtrl,
+                    label: 'من تاريخ',
+                    accentColor: Colors.teal[700]!,
                   ),
-                  const Divider(),
-                  // إلى تاريخ
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading:
-                        Icon(Icons.calendar_month, color: Colors.teal[700]),
-                    title: const Text('إلى تاريخ'),
-                    subtitle: Text(
-                      tempTo == null
-                          ? 'اختر تاريخاً'
-                          : '${tempTo!.year}/${tempTo!.month}/${tempTo!.day}',
-                      style: TextStyle(
-                          color:
-                              tempTo == null ? Colors.grey : Colors.teal[800],
-                          fontWeight: FontWeight.bold),
+                  const SizedBox(height: 16),
+                  dateField(
+                    controller: toCtrl,
+                    label: 'إلى تاريخ',
+                    accentColor: Colors.teal[700]!,
+                  ),
+                  if (errorMsg != null) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.error_outline,
+                            color: Colors.red, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(errorMsg!,
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 12)),
+                        ),
+                      ],
                     ),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: ctx,
-                        initialDate: tempTo ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('ar'),
-                      );
-                      if (picked != null) {
-                        setDialogState(() => tempTo =
-                            DateTime(picked.year, picked.month, picked.day));
-                      }
-                    },
+                  ],
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'أدخل التاريخ بصيغة: سنة/شهر/يوم\nمثال: 2026/1/15',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ],
               ),
@@ -254,9 +284,34 @@ class _CustomerPreferencesScreenState
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal[700]),
                   onPressed: () {
+                    DateTime? from;
+                    DateTime? to;
+
+                    if (fromCtrl.text.trim().isNotEmpty) {
+                      from = _parseDateFromString(fromCtrl.text.trim());
+                      if (from == null) {
+                        setDialogState(
+                            () => errorMsg = 'تاريخ البداية غير صحيح');
+                        return;
+                      }
+                    }
+                    if (toCtrl.text.trim().isNotEmpty) {
+                      to = _parseDateFromString(toCtrl.text.trim());
+                      if (to == null) {
+                        setDialogState(
+                            () => errorMsg = 'تاريخ النهاية غير صحيح');
+                        return;
+                      }
+                    }
+                    if (from != null && to != null && from.isAfter(to)) {
+                      setDialogState(() =>
+                          errorMsg = 'تاريخ البداية يجب أن يكون قبل النهاية');
+                      return;
+                    }
+
                     setState(() {
-                      _filterFrom = tempFrom;
-                      _filterTo = tempTo;
+                      _filterFrom = from;
+                      _filterTo = to;
                     });
                     _applyFilter();
                     Navigator.pop(ctx);
@@ -301,9 +356,8 @@ class _CustomerPreferencesScreenState
       final balanceStr = widget.customer.balance
           .toStringAsFixed(2)
           .replaceAll(RegExp(r'\.00$'), '');
-      final totalStr = totalTransactions
-          .toStringAsFixed(2)
-          .replaceAll(RegExp(r'\.00$'), '');
+      final totalStr =
+          totalTransactions.toStringAsFixed(2).replaceAll(RegExp(r'\.00$'), '');
 
       // وصف نطاق الفلتر للـ PDF
       String filterDesc = 'حتى تاريخ ${widget.selectedDate}';
@@ -346,8 +400,7 @@ class _CustomerPreferencesScreenState
                     pw.SizedBox(height: 14),
                     pw.Container(
                       decoration: pw.BoxDecoration(
-                        border:
-                            pw.Border.all(color: borderColor, width: 0.8),
+                        border: pw.Border.all(color: borderColor, width: 0.8),
                         borderRadius: pw.BorderRadius.circular(8),
                       ),
                       padding: const pw.EdgeInsets.all(12),
@@ -372,8 +425,7 @@ class _CustomerPreferencesScreenState
                       children: [
                         pw.Text('السجلات',
                             style: pw.TextStyle(
-                                fontSize: 13,
-                                fontWeight: pw.FontWeight.bold)),
+                                fontSize: 13, fontWeight: pw.FontWeight.bold)),
                         pw.Container(
                           padding: const pw.EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
@@ -395,13 +447,12 @@ class _CustomerPreferencesScreenState
                     if (displayList.isEmpty)
                       pw.Center(
                         child: pw.Text('لا توجد معاملات مسجلة',
-                            style: const pw.TextStyle(
-                                color: PdfColors.grey)),
+                            style: const pw.TextStyle(color: PdfColors.grey)),
                       )
                     else
                       pw.Table(
-                        border: pw.TableBorder.all(
-                            color: borderColor, width: 0.5),
+                        border:
+                            pw.TableBorder.all(color: borderColor, width: 0.5),
                         columnWidths: const {
                           0: pw.FlexColumnWidth(2),
                           1: pw.FlexColumnWidth(2),
@@ -410,11 +461,9 @@ class _CustomerPreferencesScreenState
                         },
                         children: [
                           pw.TableRow(
-                            decoration:
-                                pw.BoxDecoration(color: headerColor),
+                            decoration: pw.BoxDecoration(color: headerColor),
                             children: [
-                              _buildPdfHeaderCell(
-                                  'التاريخ', headerTextColor),
+                              _buildPdfHeaderCell('التاريخ', headerTextColor),
                               _buildPdfHeaderCell('المبلغ', headerTextColor),
                               _buildPdfHeaderCell('المصدر', headerTextColor),
                               _buildPdfHeaderCell('البيان', headerTextColor),
@@ -431,8 +480,7 @@ class _CustomerPreferencesScreenState
                               decoration: pw.BoxDecoration(color: color),
                               children: [
                                 _buildPdfCell(p['date'] ?? ''),
-                                _buildPdfCell(p['value'] ?? '',
-                                    isBold: true),
+                                _buildPdfCell(p['value'] ?? '', isBold: true),
                                 _buildPdfCell(sourceLabel),
                                 _buildPdfCell(p['notes'] ?? ''),
                               ],
@@ -461,8 +509,7 @@ class _CustomerPreferencesScreenState
       final output = await getTemporaryDirectory();
       final safeDate = widget.selectedDate.replaceAll('/', '-');
       final safeName = widget.customer.name.replaceAll(' ', '_');
-      final file =
-          File("${output.path}/تفاصيل_زبون_${safeName}_$safeDate.pdf");
+      final file = File("${output.path}/تفاصيل_زبون_${safeName}_$safeDate.pdf");
 
       await file.writeAsBytes(await pdf.save());
       await Share.shareXFiles([XFile(file.path)],
@@ -486,8 +533,8 @@ class _CustomerPreferencesScreenState
       child: pw.Row(
         children: [
           pw.Text('$label: ',
-              style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold, fontSize: 11)),
+              style:
+                  pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
           pw.Text(value, style: const pw.TextStyle(fontSize: 11)),
         ],
       ),
@@ -501,9 +548,7 @@ class _CustomerPreferencesScreenState
       child: pw.Text(text,
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: pw.FontWeight.bold)),
+              color: color, fontSize: 10, fontWeight: pw.FontWeight.bold)),
     );
   }
 
@@ -515,8 +560,7 @@ class _CustomerPreferencesScreenState
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
               fontSize: 10,
-              fontWeight:
-                  isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
     );
   }
 
@@ -525,8 +569,7 @@ class _CustomerPreferencesScreenState
   @override
   Widget build(BuildContext context) {
     final double totalVisible = _visibleTransactions.fold<double>(
-        0.0,
-        (sum, p) => sum + (double.tryParse(p['value'] ?? '0') ?? 0));
+        0.0, (sum, p) => sum + (double.tryParse(p['value'] ?? '0') ?? 0));
 
     final bool hasFilter = _filterFrom != null || _filterTo != null;
 
@@ -608,9 +651,7 @@ class _CustomerPreferencesScreenState
                                     .toStringAsFixed(2)
                                     .replaceAll(RegExp(r'\.00$'), '')),
                             const Divider(),
-                            _buildInfoRow(
-                                Icons.calendar_today,
-                                'تاريخ البدء',
+                            _buildInfoRow(Icons.calendar_today, 'تاريخ البدء',
                                 widget.customer.startDate),
                           ],
                         ),
@@ -641,8 +682,7 @@ class _CustomerPreferencesScreenState
                                   ' ← '
                                   '${_filterTo != null ? '${_filterTo!.year}/${_filterTo!.month}/${_filterTo!.day}' : '—'}',
                                   style: TextStyle(
-                                      color: Colors.teal[800],
-                                      fontSize: 12),
+                                      color: Colors.teal[800], fontSize: 12),
                                 ),
                               ),
                               GestureDetector(
@@ -668,8 +708,7 @@ class _CustomerPreferencesScreenState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text('السجلات',
                                     style: TextStyle(
@@ -696,8 +735,7 @@ class _CustomerPreferencesScreenState
                             if (_visibleTransactions.isEmpty)
                               const Center(
                                   child: Text('لا توجد معاملات مسجلة',
-                                      style:
-                                          TextStyle(color: Colors.grey)))
+                                      style: TextStyle(color: Colors.grey)))
                             else
                               Table(
                                 border: TableBorder.all(
@@ -710,39 +748,35 @@ class _CustomerPreferencesScreenState
                                 },
                                 children: [
                                   TableRow(
-                                    decoration: BoxDecoration(
-                                        color: Colors.grey[200]),
+                                    decoration:
+                                        BoxDecoration(color: Colors.grey[200]),
                                     children: const [
                                       Padding(
                                           padding: EdgeInsets.all(6),
                                           child: Text('التاريخ',
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 12),
                                               textAlign: TextAlign.center)),
                                       Padding(
                                           padding: EdgeInsets.all(6),
                                           child: Text('المبلغ',
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 12),
                                               textAlign: TextAlign.center)),
                                       Padding(
                                           padding: EdgeInsets.all(6),
                                           child: Text('المصدر',
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 12),
                                               textAlign: TextAlign.center)),
                                       Padding(
                                           padding: EdgeInsets.all(6),
                                           child: Text('البيان',
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 12),
                                               textAlign: TextAlign.center)),
                                     ],
@@ -751,36 +785,28 @@ class _CustomerPreferencesScreenState
                                     final isBox = p['source'] == 'box';
                                     return TableRow(
                                       decoration: BoxDecoration(
-                                        color: isBox
-                                            ? Colors.teal[50]
-                                            : null,
+                                        color: isBox ? Colors.teal[50] : null,
                                       ),
                                       children: [
                                         Padding(
-                                            padding:
-                                                const EdgeInsets.all(6),
+                                            padding: const EdgeInsets.all(6),
                                             child: Text(p['date'] ?? '',
                                                 style: const TextStyle(
                                                     fontSize: 11),
-                                                textAlign:
-                                                    TextAlign.center)),
+                                                textAlign: TextAlign.center)),
                                         Padding(
-                                            padding:
-                                                const EdgeInsets.all(6),
+                                            padding: const EdgeInsets.all(6),
                                             child: Text(p['value'] ?? '',
                                                 style: const TextStyle(
                                                     fontSize: 11,
                                                     fontWeight:
                                                         FontWeight.bold),
-                                                textAlign:
-                                                    TextAlign.center)),
+                                                textAlign: TextAlign.center)),
                                         Padding(
                                           padding: const EdgeInsets.all(6),
                                           child: Container(
-                                            padding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 4,
-                                                    vertical: 2),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 4, vertical: 2),
                                             decoration: BoxDecoration(
                                               color: isBox
                                                   ? Colors.teal[100]
@@ -795,20 +821,17 @@ class _CustomerPreferencesScreenState
                                                   color: isBox
                                                       ? Colors.teal[800]
                                                       : Colors.green[700],
-                                                  fontWeight:
-                                                      FontWeight.bold),
+                                                  fontWeight: FontWeight.bold),
                                               textAlign: TextAlign.center,
                                             ),
                                           ),
                                         ),
                                         Padding(
-                                            padding:
-                                                const EdgeInsets.all(6),
+                                            padding: const EdgeInsets.all(6),
                                             child: Text(p['notes'] ?? '',
                                                 style: const TextStyle(
                                                     fontSize: 11),
-                                                textAlign:
-                                                    TextAlign.center)),
+                                                textAlign: TextAlign.center)),
                                       ],
                                     );
                                   }),
@@ -833,8 +856,8 @@ class _CustomerPreferencesScreenState
           Icon(icon, color: Colors.teal[700], size: 20),
           const SizedBox(width: 10),
           Text('$label: ',
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 14)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           Expanded(
             child: Text(value,
                 style: const TextStyle(fontSize: 14),
