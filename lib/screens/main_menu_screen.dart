@@ -259,7 +259,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                                 text: 'الصندوق',
                                 icon: Icons.account_balance_wallet_rounded,
                                 gradientColors: const [
-                                  Color.fromARGB(255, 243, 163, 13),
+                                  Color.fromARGB(255, 220, 145, 5),
                                   Color.fromARGB(255, 196, 129, 6)
                                 ],
                                 accentColor: Colors.amberAccent,

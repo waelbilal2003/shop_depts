@@ -61,7 +61,7 @@ class _BoxScreenState extends State<BoxScreen> {
   late TextEditingController totalPaidController;
 
   // قوائم الخيارات
-  final List<String> accountTypeOptions = ['زبون', 'مورد'];
+  final List<String> accountTypeOptions = ['زبون', 'مورد', 'مصروف'];
 
   // متحكمات للتمرير
   final ScrollController _verticalScrollController = ScrollController();
@@ -938,6 +938,8 @@ class _BoxScreenState extends State<BoxScreen> {
         return Colors.green;
       case 'مورد':
         return Colors.blue;
+      case 'مصروف':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -949,6 +951,8 @@ class _BoxScreenState extends State<BoxScreen> {
         return 'اسم الزبون';
       case 'مورد':
         return 'اسم المورد';
+      case 'مصروف':
+        return 'نوع المصروف';
       default:
         return '...';
     }
@@ -998,11 +1002,12 @@ class _BoxScreenState extends State<BoxScreen> {
       });
 
       if (value.trim().isNotEmpty && value.trim().length > 1) {
-        if (accountTypeValues[rowIndex] == 'زبون') {
-          _saveCustomerToIndex(value);
-        } else if (accountTypeValues[rowIndex] == 'مورد') {
-          _saveSupplierToIndex(value);
-        }
+        // لا يتم حفظ الأسماء الجديدة - فقط الزبائن والموردين المخزنين مسبقاً مقبولون
+        // if (accountTypeValues[rowIndex] == 'زبون') {
+        //   _saveCustomerToIndex(value);
+        // } else if (accountTypeValues[rowIndex] == 'مورد') {
+        //   _saveSupplierToIndex(value);
+        // }
       }
 
       FocusScope.of(context).requestFocus(rowFocusNodes[rowIndex][4]);
@@ -1124,7 +1129,7 @@ class _BoxScreenState extends State<BoxScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 243, 163, 13),
+        backgroundColor: const Color.fromARGB(255, 220, 145, 5),
         foregroundColor: Colors.white,
         centerTitle: false,
         titleSpacing: 0,
@@ -1140,13 +1145,6 @@ class _BoxScreenState extends State<BoxScreen> {
               icon: const Icon(Icons.arrow_back, size: 22),
               onPressed: () => Navigator.pop(context),
               tooltip: 'رجوع',
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf, size: 22),
-              tooltip: 'تصدير PDF',
-              onPressed: () => _generateAndSharePdf(),
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
@@ -1179,6 +1177,13 @@ class _BoxScreenState extends State<BoxScreen> {
               ),
         // ── Actions: حفظ + تقويم ──
         actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf, size: 22),
+            tooltip: 'تصدير PDF',
+            onPressed: () => _generateAndSharePdf(),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.calendar_month, size: 22),
             tooltip: 'فتح يومية سابقة',
@@ -1294,39 +1299,36 @@ class _BoxScreenState extends State<BoxScreen> {
                         ),
                       ],
                     ),
+                    Container(width: 1, height: 30, color: Colors.white38),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('الرصيد',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 11)),
+                        Text(
+                          (_grandTotalReceived - _grandTotalPaid)
+                              .toStringAsFixed(2),
+                          style: TextStyle(
+                              color:
+                                  (_grandTotalReceived - _grandTotalPaid) >= 0
+                                      ? Colors.lightGreenAccent
+                                      : Colors.redAccent,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
-      floatingActionButton: MediaQuery.of(context).viewInsets.bottom > 0
-          ? null
-          : Container(
-              margin: const EdgeInsets.only(bottom: 16, right: 16),
-              child: Material(
-                color: const Color.fromARGB(
-                    255, 220, 145, 5), // أغمق قليلاً من AppBar للتمييز
-                borderRadius: BorderRadius.circular(12),
-                elevation: 8,
-                child: InkWell(
-                  onTap: _addNewRow,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 28, vertical: 16),
-                    child: const Text(
-                      'إضافة',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startDocked,
-      resizeToAvoidBottomInset: true,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addNewRow,
+        backgroundColor: const Color.fromARGB(255, 220, 145, 5),
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -1593,9 +1595,10 @@ class _BoxScreenState extends State<BoxScreen> {
     rowControllers[rowIndex][3].text = suggestion;
     _hasUnsavedChanges = true;
 
-    if (suggestion.trim().length > 1) {
-      _saveCustomerToIndex(suggestion);
-    }
+    // لا يتم حفظ الاسم في الفهرس - فقط استقبال الاقتراحات المخزنة مسبقاً
+    // if (suggestion.trim().length > 1) {
+    //   _saveCustomerToIndex(suggestion);
+    // }
 
     // 2. تحديث شريط الرصيد فوراً بناءً على الاسم الكامل الجديد
     _fetchAndCalculateBalance(rowIndex);
@@ -1620,9 +1623,10 @@ class _BoxScreenState extends State<BoxScreen> {
     rowControllers[rowIndex][3].text = suggestion;
     _hasUnsavedChanges = true;
 
-    if (suggestion.trim().length > 1) {
-      _saveSupplierToIndex(suggestion);
-    }
+    // لا يتم حفظ الاسم في الفهرس - فقط استقبال الاقتراحات المخزنة مسبقاً
+    // if (suggestion.trim().length > 1) {
+    //   _saveSupplierToIndex(suggestion);
+    // }
 
     // 2. تحديث شريط الرصيد فوراً بناءً على الاسم الكامل الجديد
     _fetchAndCalculateBalance(rowIndex);
@@ -1634,22 +1638,25 @@ class _BoxScreenState extends State<BoxScreen> {
     });
   }
 
-  // حفظ الزبون في الفهرس
+/*
+  // حفظ الزبون في الفهرس - معطل: لا يُسمح بإضافة أسماء جديدة، فقط استقبال المخزن
   void _saveCustomerToIndex(String customer) {
-    final trimmedCustomer = customer.trim();
-    if (trimmedCustomer.length > 1) {
-      _customerIndexService.saveCustomer(trimmedCustomer);
-    }
+    // final trimmedCustomer = customer.trim();
+    // if (trimmedCustomer.length > 1) {
+    //   _customerIndexService.saveCustomer(trimmedCustomer);
+    // }
   }
 
-  // حفظ المورد في الفهرس
+  */
+  // حفظ المورد في الفهرس - معطل: لا يُسمح بإضافة أسماء جديدة، فقط استقبال المخزن
+  /*
   void _saveSupplierToIndex(String supplier) {
-    final trimmedSupplier = supplier.trim();
-    if (trimmedSupplier.length > 1) {
-      _supplierIndexService.saveSupplier(trimmedSupplier);
-    }
+    // final trimmedSupplier = supplier.trim();
+    // if (trimmedSupplier.length > 1) {
+    //   _supplierIndexService.saveSupplier(trimmedSupplier);
+    // }
   }
-
+    */
   void _toggleFullScreenSuggestions(
       {required String type, required bool show}) {
     if (mounted) {
