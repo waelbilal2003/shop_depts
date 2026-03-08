@@ -47,6 +47,7 @@ class _SalesScreenState extends State<SalesScreen> {
   bool _isLoadingDates = false;
 
   Timer? _calculateTotalsDebouncer;
+  double _grandTotal = 0.0;
 
   @override
   void initState() {
@@ -124,12 +125,24 @@ class _SalesScreenState extends State<SalesScreen> {
         _availableDates = dates;
         _isLoadingDates = false;
       });
+      _loadGrandTotal();
     } catch (e) {
       setState(() {
         _availableDates = [];
         _isLoadingDates = false;
       });
     }
+  }
+
+  Future<void> _loadGrandTotal() async {
+    double total = 0.0;
+    for (var dateInfo in _availableDates) {
+      final doc = await _storageService.loadDocumentForDate(dateInfo['date']!);
+      if (doc != null) {
+        total += double.tryParse(doc.totals['totalPayments'] ?? '0') ?? 0;
+      }
+    }
+    if (mounted) setState(() => _grandTotal = total);
   }
 
   void _hideSuggestions() {
@@ -463,6 +476,31 @@ class _SalesScreenState extends State<SalesScreen> {
           ],
         ),
         body: _buildTableWithStickyHeader(),
+        bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom > 0
+            ? null
+            : Container(
+                color: Colors.green[800],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('المجموع الكلي للمبيعات: ',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 14)),
+                      Text(
+                        _grandTotal.toStringAsFixed(2),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
         floatingActionButton: FloatingActionButton(
           onPressed: _addNewRow,
           backgroundColor: Colors.green[700],

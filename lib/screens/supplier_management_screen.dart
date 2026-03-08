@@ -156,14 +156,52 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _addController,
-                focusNode: _addFocusNode,
-                decoration: const InputDecoration(
-                  labelText: 'إضافة مورد جديد',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => _addNewSupplier(),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.brown[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.brown.shade200),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('المجموع: ',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.brown)),
+                          Text(
+                            _suppliersData.values
+                                .fold(0.0, (sum, s) => sum + s.balance)
+                                .toStringAsFixed(2),
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _addController,
+                      focusNode: _addFocusNode,
+                      decoration: const InputDecoration(
+                        labelText: 'إضافة مورد جديد',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _addNewSupplier(),
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(

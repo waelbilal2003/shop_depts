@@ -100,6 +100,8 @@ class _BoxScreenState extends State<BoxScreen> {
   double? _lastFetchedBalance;
   double? _calculatedRemaining;
   String _lastAccountName = '';
+  double _grandTotalReceived = 0.0;
+  double _grandTotalPaid = 0.0;
 
   @override
   void initState() {
@@ -186,10 +188,29 @@ class _BoxScreenState extends State<BoxScreen> {
         _availableDates = dates;
         _isLoadingDates = false;
       });
+      _loadGrandTotal();
     } catch (e) {
       setState(() {
         _availableDates = [];
         _isLoadingDates = false;
+      });
+    }
+  }
+
+  Future<void> _loadGrandTotal() async {
+    double totalRec = 0.0, totalPaid = 0.0;
+    for (var dateInfo in _availableDates) {
+      final doc =
+          await _storageService.loadBoxDocumentForDate(dateInfo['date']!);
+      if (doc != null) {
+        totalRec += double.tryParse(doc.totals['totalReceived'] ?? '0') ?? 0;
+        totalPaid += double.tryParse(doc.totals['totalPaid'] ?? '0') ?? 0;
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _grandTotalReceived = totalRec;
+        _grandTotalPaid = totalPaid;
       });
     }
   }
@@ -1232,6 +1253,51 @@ class _BoxScreenState extends State<BoxScreen> {
         ],
       ),
       body: _buildMainContent(),
+      bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom > 0
+          ? null
+          : Container(
+              color: const Color.fromARGB(255, 180, 120, 5),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('إجمالي المقبوض',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 11)),
+                        Text(
+                          _grandTotalReceived.toStringAsFixed(2),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Container(width: 1, height: 30, color: Colors.white38),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('إجمالي المدفوع',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 11)),
+                        Text(
+                          _grandTotalPaid.toStringAsFixed(2),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
       floatingActionButton: MediaQuery.of(context).viewInsets.bottom > 0
           ? null
           : Container(

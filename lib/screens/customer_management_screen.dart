@@ -156,14 +156,52 @@ class _CustomerManagementScreenState extends State<CustomerManagementScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _addController,
-                focusNode: _addFocusNode,
-                decoration: const InputDecoration(
-                  labelText: 'إضافة زبون جديد',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => _addNewCustomer(),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.teal[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.teal.shade200),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('المجموع: ',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal)),
+                          Text(
+                            _customersData.values
+                                .fold(0.0, (sum, c) => sum + c.balance)
+                                .toStringAsFixed(2),
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _addController,
+                      focusNode: _addFocusNode,
+                      decoration: const InputDecoration(
+                        labelText: 'إضافة زبون جديد',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _addNewCustomer(),
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(
