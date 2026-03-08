@@ -512,12 +512,12 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                     // ════════════════════════════════
                     _sectionHeader('حساب المتاجرة', tradingColor),
                     Row(children: [
-                      _colHeader('المبيعات', Colors.green.shade600),
                       _colHeader('المشتريات', Colors.red.shade600),
+                      _colHeader('المبيعات', Colors.green.shade600),
                     ]),
                     _twoColRow(
-                      _cell('بيع', _salesTotal.toStringAsFixed(2)),
                       _cell('شراء', _purchasesTotal.toStringAsFixed(2)),
+                      _cell('بيع', _salesTotal.toStringAsFixed(2)),
                     ),
                     // سطر الربح أو الخسارة التجارية
                     if (!isTradingEqual)
@@ -542,12 +542,12 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                     _totalRow(
                       'المجموع',
                       isTradingProfit
-                          ? (_purchasesTotal + tradingX).toStringAsFixed(2)
-                          : _salesTotal.toStringAsFixed(2),
+                          ? (_salesTotal + tradingX).toStringAsFixed(2)
+                          : _purchasesTotal.toStringAsFixed(2),
                       'المجموع',
                       isTradingProfit
-                          ? _salesTotal.toStringAsFixed(2)
-                          : (_purchasesTotal).toStringAsFixed(2),
+                          ? _purchasesTotal.toStringAsFixed(2)
+                          : (_salesTotal).toStringAsFixed(2),
                       tradingColor,
                     ),
                     const SizedBox(height: 7),
@@ -605,10 +605,7 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                     // المرحلة الثالثة: الميزانية الختامية
                     // ════════════════════════════════
                     _sectionHeader('الميزانية الختامية', balColor),
-                    Row(children: [
-                      _colHeader('أصول', Colors.blue.shade700),
-                      _colHeader('خصوم + حقوق', Colors.indigo.shade700),
-                    ]),
+
                     // الزبائن (يمين) / الموردون (يسار)
                     _twoColRow(
                       _cell('الزبائن', _customersBalance.toStringAsFixed(2)),
