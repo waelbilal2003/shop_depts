@@ -319,7 +319,9 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
           boxPaid += double.tryParse(doc.totals['totalPaid'] ?? '0') ?? 0;
           for (var trans in doc.transactions) {
             if (trans.accountType == 'مصروف') {
-              expenses += double.tryParse(trans.paid) ?? 0;
+              final paid = double.tryParse(trans.paid) ?? 0;
+              final received = double.tryParse(trans.received) ?? 0;
+              expenses += paid - received; // المدفوع - المقبوض = صافي المصروف
             }
           }
         }
@@ -556,16 +558,18 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                                 isBold: true,
                                 valueColor: Colors.red.shade800),
                       ),
-                    // صف المجاميع
+                    // صف المجاميع - كلا الطرفين يجب أن يتساويا
                     _totalRow(
                       'المجموع',
+                      // يمين: إذا ربح = مشتريات + ربح = مبيعات، إذا خسارة = مشتريات
                       isTradingProfit
-                          ? (_salesTotal + tradingX).toStringAsFixed(2)
+                          ? _salesTotal.toStringAsFixed(2)
                           : _purchasesTotal.toStringAsFixed(2),
                       'المجموع',
+                      // يسار: إذا ربح = مبيعات، إذا خسارة = مبيعات + خسارة = مشتريات
                       isTradingProfit
-                          ? _purchasesTotal.toStringAsFixed(2)
-                          : (_salesTotal).toStringAsFixed(2),
+                          ? _salesTotal.toStringAsFixed(2)
+                          : _purchasesTotal.toStringAsFixed(2),
                       tradingColor,
                     ),
                     const SizedBox(height: 7),
@@ -590,16 +594,18 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                             tradingX.abs().toStringAsFixed(2)),
                         _cell('', ''),
                       ),
-                    // صافي الربح أو الخسارة
+                    // صافي الربح في اليمين (مدين) / صافي الخسارة في اليسار (دائن)
                     if (!isNetEqual)
                       _twoColRow(
-                        isNetProfit ? _cell('', '') : _cell('', ''),
                         isNetProfit
                             ? _cell('صافي الربح', netResult.toStringAsFixed(2),
                                 bgColor: Colors.green.shade50,
                                 textColor: Colors.green.shade800,
                                 isBold: true,
                                 valueColor: Colors.green.shade800)
+                            : _cell('', ''),
+                        isNetProfit
+                            ? _cell('', '')
                             : _cell('صافي الخسارة',
                                 netResult.abs().toStringAsFixed(2),
                                 bgColor: Colors.red.shade50,
@@ -609,8 +615,10 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                       ),
                     _totalRow(
                       'المجموع',
-                      plRight.toStringAsFixed(2),
+                      // يمين: مصروف + [صافي ربح] أو مصروف + خسارة تجارية
+                      (isNetProfit ? plLeft : plRight).toStringAsFixed(2),
                       'المجموع',
+                      // يسار: ربح تجاري (إن وجد) أو يساوي يمين
                       (isNetProfit ? plLeft : plRight).toStringAsFixed(2),
                       plColor,
                     ),
