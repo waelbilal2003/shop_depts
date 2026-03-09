@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'customer_preferences_screen.dart';
 import 'supplier_preferences_screen.dart';
 import '../services/customer_index_service.dart';
@@ -115,10 +116,270 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     style:
                         TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const OpeningBalancesScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepOrange[700],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 5,
+                ),
+                child: const Text('أرصدة البداية',
+                    style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════
+// شاشة أرصدة البداية
+// ════════════════════════════════════════════════════
+class OpeningBalancesScreen extends StatefulWidget {
+  const OpeningBalancesScreen({super.key});
+
+  @override
+  State<OpeningBalancesScreen> createState() => _OpeningBalancesScreenState();
+}
+
+class _OpeningBalancesScreenState extends State<OpeningBalancesScreen> {
+  static const String _keyBoxBalance = 'opening_box_balance';
+  static const String _keyCapital = 'opening_capital';
+
+  final TextEditingController _boxBalanceController = TextEditingController();
+  final TextEditingController _capitalController = TextEditingController();
+
+  bool _isSaved = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBalances();
+  }
+
+  @override
+  void dispose() {
+    _boxBalanceController.dispose();
+    _capitalController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadBalances() async {
+    final prefs = await SharedPreferences.getInstance();
+    final boxVal = prefs.getString(_keyBoxBalance);
+    final capVal = prefs.getString(_keyCapital);
+    setState(() {
+      _isSaved = boxVal != null || capVal != null;
+      _boxBalanceController.text = boxVal ?? '';
+      _capitalController.text = capVal ?? '';
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _saveBalances() async {
+    final boxText = _boxBalanceController.text.trim();
+    final capText = _capitalController.text.trim();
+
+    final boxVal = double.tryParse(boxText);
+    final capVal = double.tryParse(capText);
+
+    if (boxVal == null || capVal == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى إدخال أرقام صحيحة في الحقلين'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyBoxBalance, boxText);
+    await prefs.setString(_keyCapital, capText);
+
+    setState(() => _isSaved = true);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ تم حفظ أرصدة البداية بنجاح'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('أرصدة البداية'),
+        backgroundColor: Colors.deepOrange[700],
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Directionality(
+              textDirection: TextDirection.rtl,
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── أيقونة وعنوان ──
+                    Icon(Icons.account_balance_wallet,
+                        size: 64, color: Colors.deepOrange[700]),
+                    const SizedBox(height: 12),
+                    Text(
+                      'أرصدة البداية',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepOrange[800]),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _isSaved
+                          ? 'تم حفظ الأرصدة مسبقاً — يمكنك تعديلها وإعادة الحفظ'
+                          : 'أدخل أرصدة البداية مرة واحدة — ستبقى ثابتة',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // ── حقل رصيد الصندوق ──
+                    Text(
+                      'رصيد الصندوق الابتدائي',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepOrange[800]),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _boxBalanceController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        hintText: '0.00',
+                        prefixIcon: const Icon(Icons.inbox),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: Colors.deepOrange[700]!, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.deepOrange[50],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // ── حقل رأس المال ──
+                    Text(
+                      'رأس المال الابتدائي',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepOrange[800]),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _capitalController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        hintText: '0.00',
+                        prefixIcon: const Icon(Icons.account_balance),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: Colors.deepOrange[700]!, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.deepOrange[50],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // ── زر الحفظ ──
+                    ElevatedButton.icon(
+                      onPressed: _saveBalances,
+                      icon: const Icon(Icons.save, size: 24),
+                      label: Text(
+                        _isSaved ? 'تحديث الأرصدة' : 'حفظ الأرصدة',
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepOrange[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 5,
+                      ),
+                    ),
+
+                    // ── مؤشر الحفظ ──
+                    if (_isSaved) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.green.shade300),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle,
+                                color: Colors.green[700], size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'الأرصدة محفوظة وتؤثر على الميزانية الختامية',
+                              style: TextStyle(
+                                  color: Colors.green[800],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }
@@ -292,6 +553,8 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
   double _expensesTotal = 0;
   double _customersBalance = 0;
   double _suppliersBalance = 0;
+  double _openingBoxBalance = 0; // رصيد الصندوق الابتدائي
+  double _openingCapital = 0; // رأس المال الابتدائي
   bool _isLoading = true;
 
   @override
@@ -305,7 +568,8 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
       // ── المجموع الكلي للمبيعات من جميع الأيام ──
       double sales = 0;
       double purchases = 0;
-      double boxReceived = 0, boxPaid = 0, expenses = 0;
+      double boxReceived = 0, boxPaid = 0;
+      double expensesTotalPaid = 0, expensesTotalReceived = 0;
 
       // جلب بيانات الصندوق + المصروف
       final allBoxDates =
@@ -319,13 +583,14 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
           boxPaid += double.tryParse(doc.totals['totalPaid'] ?? '0') ?? 0;
           for (var trans in doc.transactions) {
             if (trans.accountType == 'مصروف') {
-              final paid = double.tryParse(trans.paid) ?? 0;
-              final received = double.tryParse(trans.received) ?? 0;
-              expenses += paid - received; // المدفوع - المقبوض = صافي المصروف
+              expensesTotalPaid += double.tryParse(trans.paid) ?? 0;
+              expensesTotalReceived += double.tryParse(trans.received) ?? 0;
             }
           }
         }
       }
+      // المصروف الكلي = مجموع المدفوع الكلي - مجموع المقبوض الكلي لجميع الأيام
+      final double expenses = expensesTotalPaid - expensesTotalReceived;
 
       // جلب المبيعات الكلية عبر SalesStorageService
       final salesAllDates = await _salesStorageService.getAllAvailableDates();
@@ -348,6 +613,13 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
 
       final double boxBalance = boxReceived - boxPaid;
 
+      // جلب أرصدة البداية من SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final openingBox =
+          double.tryParse(prefs.getString('opening_box_balance') ?? '0') ?? 0;
+      final openingCap =
+          double.tryParse(prefs.getString('opening_capital') ?? '0') ?? 0;
+
       final customers = await _customerIndexService.getAllCustomersWithData();
       final suppliers = await _supplierIndexService.getAllSuppliersWithData();
       final custBalance = customers.values.fold(0.0, (s, c) => s + c.balance);
@@ -361,6 +633,8 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
           _expensesTotal = expenses;
           _customersBalance = custBalance;
           _suppliersBalance = suppBalance;
+          _openingBoxBalance = openingBox;
+          _openingCapital = openingCap;
           _isLoading = false;
         });
       }
@@ -499,14 +773,22 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
     final bool isNetEqual = netResult == 0;
 
     // ── المرحلة الثالثة: الميزانية ──
+    // رصيد الصندوق الفعلي = رصيد الصندوق الابتدائي + صافي حركة الصندوق
+    final double totalBoxBalance = _openingBoxBalance + _boxReceived;
+    // رأس المال الفعلي = رأس المال الابتدائي + رأس المال المحسوب
     // يمين (أصول): الزبائن + الصندوق + صافي خسارة إن وجدت
     // يسار (خصوم): الموردون + رأس المال + صافي ربح إن وجد
     // رأس المال = يمين الكلي - موردون - صافي ربح
     double balanceRight = _customersBalance +
-        _boxReceived +
+        totalBoxBalance +
         (isNetProfit || isNetEqual ? 0 : netResult.abs());
-    double capital =
-        balanceRight - _suppliersBalance - (isNetProfit ? netResult : 0);
+    double capital = _openingCapital +
+        (balanceRight -
+            _suppliersBalance -
+            (isNetProfit ? netResult : 0) -
+            _openingCapital);
+    // تبسيط: capital = balanceRight - suppliersBalance - netProfit
+    capital = balanceRight - _suppliersBalance - (isNetProfit ? netResult : 0);
     double balanceLeft =
         _suppliersBalance + capital + (isNetProfit ? netResult : 0);
 
@@ -615,10 +897,10 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                       ),
                     _totalRow(
                       'المجموع',
-                      // يمين: مصروف + [صافي ربح] أو مصروف + خسارة تجارية
+                      // يمين: مصروف + خسارة تجارية + صافي ربح (إن وجد) = ربح تجاري
                       (isNetProfit ? plLeft : plRight).toStringAsFixed(2),
                       'المجموع',
-                      // يسار: ربح تجاري (إن وجد) أو يساوي يمين
+                      // يسار: ربح تجاري (إن وجد) أو مصروف + خسارة تجارية + صافي خسارة
                       (isNetProfit ? plLeft : plRight).toStringAsFixed(2),
                       plColor,
                     ),
@@ -636,7 +918,7 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                     ),
                     // الصندوق (يمين) / رأس المال (يسار)
                     _twoColRow(
-                      _cell('الصندوق', _boxReceived.toStringAsFixed(2)),
+                      _cell('الصندوق', totalBoxBalance.toStringAsFixed(2)),
                       _cell('رأس المال', capital.toStringAsFixed(2)),
                     ),
                     // صافي الخسارة في اليمين إن وجدت / صافي الربح في اليسار إن وجد
