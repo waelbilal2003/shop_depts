@@ -536,7 +536,7 @@ class _SupplierPreferencesScreenState extends State<SupplierPreferencesScreen> {
                           0: pw.FlexColumnWidth(2),
                           1: pw.FlexColumnWidth(2),
                           2: pw.FlexColumnWidth(2),
-                          3: pw.FlexColumnWidth(3),
+                          3: pw.FlexColumnWidth(2),
                         },
                         children: [
                           pw.TableRow(
