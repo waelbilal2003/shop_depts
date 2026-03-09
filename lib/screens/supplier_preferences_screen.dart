@@ -828,10 +828,10 @@ class _SupplierPreferencesScreenState extends State<SupplierPreferencesScreen> {
                                 border: TableBorder.all(
                                     color: Colors.grey.shade300),
                                 columnWidths: const {
-                                  0: FlexColumnWidth(1.6),
+                                  0: FlexColumnWidth(2),
                                   1: FlexColumnWidth(2),
                                   2: FlexColumnWidth(2),
-                                  3: FlexColumnWidth(2.4),
+                                  3: FlexColumnWidth(2),
                                 },
                                 children: [
                                   TableRow(

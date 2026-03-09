@@ -528,7 +528,7 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                           0: pw.FlexColumnWidth(2),
                           1: pw.FlexColumnWidth(2),
                           2: pw.FlexColumnWidth(2),
-                          3: pw.FlexColumnWidth(3),
+                          3: pw.FlexColumnWidth(2),
                         },
                         children: [
                           pw.TableRow(
@@ -820,10 +820,10 @@ class _CustomerPreferencesScreenState extends State<CustomerPreferencesScreen> {
                                 border: TableBorder.all(
                                     color: Colors.grey.shade300),
                                 columnWidths: const {
-                                  0: FlexColumnWidth(1.6),
+                                  0: FlexColumnWidth(2),
                                   1: FlexColumnWidth(2),
                                   2: FlexColumnWidth(2),
-                                  3: FlexColumnWidth(2.4),
+                                  3: FlexColumnWidth(2),
                                 },
                                 children: [
                                   TableRow(
