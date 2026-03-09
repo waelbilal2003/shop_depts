@@ -1151,7 +1151,7 @@ class _BoxScreenState extends State<BoxScreen> {
           ],
         ),
 
-        // ── Title: عنوان اليومية دائماً ثابت + شريط الاقتراحات فوقه ──
+        // ── Title: عنوان + رصيد كلي أو شريط اقتراحات ──
         title: _showFullScreenSuggestions && _getSuggestionsByType().isNotEmpty
             ? SuggestionsBanner(
                 suggestions: _getSuggestionsByType(),
@@ -1167,13 +1167,40 @@ class _BoxScreenState extends State<BoxScreen> {
                 onClose: () =>
                     _toggleFullScreenSuggestions(type: '', show: false),
               )
-            : Center(
-                child: Text(
-                  'يومية الصندوق \n  بتاريخ  ${widget.selectedDate}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16, height: 1.2),
-                  textAlign: TextAlign.center,
-                ),
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'الصندوق - ${widget.selectedDate}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                  Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('الرصيد الكلي: ',
+                            style:
+                                TextStyle(fontSize: 11, color: Colors.white70)),
+                        Text(
+                          (_grandTotalReceived - _grandTotalPaid)
+                              .toStringAsFixed(2),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: (_grandTotalReceived - _grandTotalPaid) >= 0
+                                ? Colors.lightGreenAccent
+                                : Colors.redAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
         // ── Actions: حفظ + تقويم ──
         actions: [
@@ -1258,71 +1285,6 @@ class _BoxScreenState extends State<BoxScreen> {
         ],
       ),
       body: _buildMainContent(),
-      bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom > 0
-          ? null
-          : Container(
-              color: const Color.fromARGB(255, 180, 120, 5),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('إجمالي المقبوض',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text(
-                          _grandTotalReceived.toStringAsFixed(2),
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    Container(width: 1, height: 30, color: Colors.white38),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('إجمالي المدفوع',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text(
-                          _grandTotalPaid.toStringAsFixed(2),
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    Container(width: 1, height: 30, color: Colors.white38),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('الرصيد',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text(
-                          (_grandTotalReceived - _grandTotalPaid)
-                              .toStringAsFixed(2),
-                          style: TextStyle(
-                              color:
-                                  (_grandTotalReceived - _grandTotalPaid) >= 0
-                                      ? Colors.lightGreenAccent
-                                      : Colors.redAccent,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addNewRow,
         backgroundColor: const Color.fromARGB(255, 220, 145, 5),

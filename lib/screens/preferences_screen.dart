@@ -301,54 +301,72 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
   }
 
   Future<void> _loadData() async {
-    final salesDoc =
-        await _salesStorageService.loadDocumentForDate(widget.selectedDate);
-    final purchasesDoc =
-        await _purchasesStorageService.loadDocumentForDate(widget.selectedDate);
-    final boxDoc =
-        await _boxStorageService.loadBoxDocumentForDate(widget.selectedDate);
-    final customers = await _customerIndexService.getAllCustomersWithData();
-    final suppliers = await _supplierIndexService.getAllSuppliersWithData();
+    try {
+      // ── المجموع الكلي للمبيعات من جميع الأيام ──
+      double sales = 0;
+      double purchases = 0;
+      double boxReceived = 0, boxPaid = 0, expenses = 0;
 
-    final allDates = await _boxStorageService.getAvailableDatesWithNumbers();
-    double expenses = 0;
-    for (var dateInfo in allDates) {
-      final doc =
-          await _boxStorageService.loadBoxDocumentForDate(dateInfo['date']!);
-      if (doc != null) {
-        for (var trans in doc.transactions) {
-          if (trans.accountType == 'مصروف') {
-            expenses += double.tryParse(trans.paid) ?? 0;
+      // جلب بيانات الصندوق + المصروف
+      final allBoxDates =
+          await _boxStorageService.getAvailableDatesWithNumbers();
+      for (var dateInfo in allBoxDates) {
+        final doc =
+            await _boxStorageService.loadBoxDocumentForDate(dateInfo['date']!);
+        if (doc != null) {
+          boxReceived +=
+              double.tryParse(doc.totals['totalReceived'] ?? '0') ?? 0;
+          boxPaid += double.tryParse(doc.totals['totalPaid'] ?? '0') ?? 0;
+          for (var trans in doc.transactions) {
+            if (trans.accountType == 'مصروف') {
+              expenses += double.tryParse(trans.paid) ?? 0;
+            }
           }
         }
       }
-    }
 
-    double sales = 0, purchases = 0, boxRec = 0;
-    if (salesDoc != null) {
-      sales = double.tryParse(salesDoc.totals['totalPayments'] ?? '0') ?? 0;
-    }
-    if (purchasesDoc != null) {
-      purchases =
-          double.tryParse(purchasesDoc.totals['totalPayments'] ?? '0') ?? 0;
-    }
-    if (boxDoc != null) {
-      boxRec = double.tryParse(boxDoc.totals['totalReceived'] ?? '0') ?? 0;
-    }
+      // جلب المبيعات الكلية عبر SalesStorageService
+      final salesAllDates = await _salesStorageService.getAllAvailableDates();
+      for (var date in salesAllDates) {
+        final doc = await _salesStorageService.loadDocumentForDate(date);
+        if (doc != null) {
+          sales += double.tryParse(doc.totals['totalPayments'] ?? '0') ?? 0;
+        }
+      }
 
-    final custBalance = customers.values.fold(0.0, (s, c) => s + c.balance);
-    final suppBalance = suppliers.values.fold(0.0, (s, c) => s + c.balance);
+      // جلب المشتريات الكلية عبر PurchasesStorageService
+      final purchasesAllDates =
+          await _purchasesStorageService.getAllAvailableDates();
+      for (var date in purchasesAllDates) {
+        final doc = await _purchasesStorageService.loadDocumentForDate(date);
+        if (doc != null) {
+          purchases += double.tryParse(doc.totals['totalPayments'] ?? '0') ?? 0;
+        }
+      }
 
-    if (mounted) {
-      setState(() {
-        _salesTotal = sales;
-        _purchasesTotal = purchases;
-        _boxReceived = boxRec;
-        _expensesTotal = expenses;
-        _customersBalance = custBalance;
-        _suppliersBalance = suppBalance;
-        _isLoading = false;
-      });
+      final double boxBalance = boxReceived - boxPaid;
+
+      final customers = await _customerIndexService.getAllCustomersWithData();
+      final suppliers = await _supplierIndexService.getAllSuppliersWithData();
+      final custBalance = customers.values.fold(0.0, (s, c) => s + c.balance);
+      final suppBalance = suppliers.values.fold(0.0, (s, c) => s + c.balance);
+
+      if (mounted) {
+        setState(() {
+          _salesTotal = sales;
+          _purchasesTotal = purchases;
+          _boxReceived = boxBalance;
+          _expensesTotal = expenses;
+          _customersBalance = custBalance;
+          _suppliersBalance = suppBalance;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // في حال أي خطأ (بما فيه بيئة الويب) أوقف التحميل
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -419,6 +437,7 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
   }
 
   // ── رأس عمودي (يمين / يسار) ──
+  /*
   Widget _colHeader(String title, Color color) {
     return Expanded(
       child: Container(
@@ -433,6 +452,8 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
       ),
     );
   }
+
+ */
 
   // ── صف إجمالي ──
   Widget _totalRow(String rightLabel, String rightVal, String leftLabel,
@@ -511,13 +532,10 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                     // المرحلة الأولى: حساب المتاجرة
                     // ════════════════════════════════
                     _sectionHeader('حساب المتاجرة', tradingColor),
-                    Row(children: [
-                      _colHeader('المشتريات', Colors.red.shade600),
-                      _colHeader('المبيعات', Colors.green.shade600),
-                    ]),
+
                     _twoColRow(
-                      _cell('شراء', _purchasesTotal.toStringAsFixed(2)),
-                      _cell('بيع', _salesTotal.toStringAsFixed(2)),
+                      _cell('المشتريات', _purchasesTotal.toStringAsFixed(2)),
+                      _cell('المبيعات', _salesTotal.toStringAsFixed(2)),
                     ),
                     // سطر الربح أو الخسارة التجارية
                     if (!isTradingEqual)
@@ -556,10 +574,7 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
                     // المرحلة الثانية: حساب الأرباح والخسائر
                     // ════════════════════════════════
                     _sectionHeader('حساب الأرباح والخسائر', plColor),
-                    Row(children: [
-                      _colHeader('مدين', Colors.red.shade600),
-                      _colHeader('دائن', Colors.green.shade600),
-                    ]),
+
                     // المصروف دائماً في اليمين (مدين)
                     _twoColRow(
                       _cell('المصروف', _expensesTotal.toStringAsFixed(2)),

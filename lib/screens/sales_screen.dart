@@ -387,11 +387,39 @@ class _SalesScreenState extends State<SalesScreen> {
                     onSelect: _selectCustomerSuggestion,
                     onClose: _hideSuggestions,
                   )
-                : Text(
-                    'المبيعات\nبتاريخ ${widget.selectedDate}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16, height: 1.2),
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'المبيعات - ${widget.selectedDate}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            height: 1.5),
+                      ),
+                      Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('الإجمالي الكلي: ',
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.white70)),
+                            Text(
+                              _grandTotal.toStringAsFixed(2),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.lightGreenAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
           ),
           centerTitle: true,
@@ -476,31 +504,6 @@ class _SalesScreenState extends State<SalesScreen> {
           ],
         ),
         body: _buildTableWithStickyHeader(),
-        bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom > 0
-            ? null
-            : Container(
-                color: Colors.green[800],
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('المجموع الكلي للمبيعات: ',
-                          style:
-                              TextStyle(color: Colors.white70, fontSize: 14)),
-                      Text(
-                        _grandTotal.toStringAsFixed(2),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
         floatingActionButton: FloatingActionButton(
           onPressed: _addNewRow,
           backgroundColor: Colors.green[700],
