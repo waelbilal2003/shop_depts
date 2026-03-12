@@ -58,8 +58,16 @@ class CustomerIndexService {
   }
 
   Future<String> _getFilePath() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return '${directory.path}/$_fileName';
+    Directory? directory;
+    if (Platform.isAndroid) {
+      directory = await getExternalStorageDirectory();
+    } else {
+      directory = await getApplicationDocumentsDirectory();
+    }
+    final folderPath = '${directory!.path}/AppData/indexes';
+    final folder = Directory(folderPath);
+    if (!await folder.exists()) await folder.create(recursive: true);
+    return '$folderPath/$_fileName';
   }
 
   Future<void> _loadCustomers() async {
@@ -150,8 +158,7 @@ class CustomerIndexService {
     }
   }
 
-  Future<void> updateCustomerMobile(
-      String customerName, String mobile) async {
+  Future<void> updateCustomerMobile(String customerName, String mobile) async {
     await _ensureInitialized();
     final normalized = customerName.trim().toLowerCase();
     for (var entry in _customerMap.entries) {
@@ -163,8 +170,7 @@ class CustomerIndexService {
     }
   }
 
-  Future<void> setInitialBalance(
-      String customerName, double balance) async {
+  Future<void> setInitialBalance(String customerName, double balance) async {
     await _ensureInitialized();
     final normalized = customerName.trim().toLowerCase();
     for (var entry in _customerMap.entries) {
@@ -180,8 +186,7 @@ class CustomerIndexService {
     await _ensureInitialized();
     if (query.isEmpty) return [];
     return _customerMap.values
-        .where((c) =>
-            c.name.toLowerCase().contains(query.toLowerCase().trim()))
+        .where((c) => c.name.toLowerCase().contains(query.toLowerCase().trim()))
         .map((c) => c.name)
         .toList();
   }
@@ -195,8 +200,7 @@ class CustomerIndexService {
     await _ensureInitialized();
     int? keyToRemove;
     for (var entry in _customerMap.entries) {
-      if (entry.value.name.toLowerCase() ==
-          customerName.trim().toLowerCase()) {
+      if (entry.value.name.toLowerCase() == customerName.trim().toLowerCase()) {
         keyToRemove = entry.key;
         break;
       }

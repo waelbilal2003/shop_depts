@@ -9,7 +9,6 @@ import '../services/customer_index_service.dart';
 import '../services/supplier_index_service.dart';
 import '../services/enhanced_index_service.dart';
 import '../widgets/suggestions_banner.dart';
-import '../services/supplier_balance_tracker.dart';
 import '../services/app_settings_service.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -92,7 +91,7 @@ class _BoxScreenState extends State<BoxScreen> {
   // ============ تحديث أرصدة الموردين والزبائن ============
   Map<String, double> customerBalanceChanges = {};
   Map<String, double> supplierBalanceChanges = {};
-  final SupplierBalanceTracker _balanceTracker = SupplierBalanceTracker();
+
   // متغير لتأخير حساب المجاميع (debouncing)
   Timer? _calculateTotalsDebouncer;
   bool _isCalculating = false;
@@ -155,7 +154,6 @@ class _BoxScreenState extends State<BoxScreen> {
     // إغلاق المتحكم
     _horizontalSuggestionsController.dispose();
 
-    _balanceTracker.dispose();
     _calculateTotalsDebouncer?.cancel();
     super.dispose();
   }
