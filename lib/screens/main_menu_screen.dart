@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_settings_service.dart';
 import 'customer_management_screen.dart';
 import 'supplier_management_screen.dart';
 import 'preferences_screen.dart';
@@ -27,10 +27,16 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _loadPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
+    final settings = AppSettingsService();
     setState(() {
-      _sellerName = prefs.getString('seller_name') ?? '';
-      _storeName = prefs.getString('store_name') ?? '';
+      _sellerName = '';
+      _storeName = '';
+    });
+    final seller = await settings.getString('seller_name');
+    final store = await settings.getString('store_name');
+    setState(() {
+      _sellerName = seller ?? '';
+      _storeName = store ?? '';
     });
   }
 

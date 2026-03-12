@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_settings_service.dart';
 import 'customer_preferences_screen.dart';
 import 'supplier_preferences_screen.dart';
 import '../services/customer_index_service.dart';
@@ -180,9 +180,9 @@ class _OpeningBalancesScreenState extends State<OpeningBalancesScreen> {
   }
 
   Future<void> _loadBalances() async {
-    final prefs = await SharedPreferences.getInstance();
-    final boxVal = prefs.getString(_keyBoxBalance);
-    final capVal = prefs.getString(_keyCapital);
+    final settings = AppSettingsService();
+    final boxVal = await settings.getString(_keyBoxBalance);
+    final capVal = await settings.getString(_keyCapital);
     setState(() {
       _isSaved = boxVal != null || capVal != null;
       _boxBalanceController.text = boxVal ?? '';
@@ -208,9 +208,9 @@ class _OpeningBalancesScreenState extends State<OpeningBalancesScreen> {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyBoxBalance, boxText);
-    await prefs.setString(_keyCapital, capText);
+    final settings = AppSettingsService();
+    await settings.setString(_keyBoxBalance, boxText);
+    await settings.setString(_keyCapital, capText);
 
     setState(() => _isSaved = true);
 
@@ -613,12 +613,14 @@ class _AccountSummaryScreenState extends State<AccountSummaryScreen> {
 
       final double boxBalance = boxReceived - boxPaid;
 
-      // جلب أرصدة البداية من SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final openingBox =
-          double.tryParse(prefs.getString('opening_box_balance') ?? '0') ?? 0;
+      // جلب أرصدة البداية من ملف الإعدادات
+      final settings = AppSettingsService();
+      final openingBox = double.tryParse(
+              await settings.getString('opening_box_balance') ?? '0') ??
+          0;
       final openingCap =
-          double.tryParse(prefs.getString('opening_capital') ?? '0') ?? 0;
+          double.tryParse(await settings.getString('opening_capital') ?? '0') ??
+              0;
 
       final customers = await _customerIndexService.getAllCustomersWithData();
       final suppliers = await _supplierIndexService.getAllSuppliersWithData();

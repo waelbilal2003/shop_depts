@@ -10,7 +10,7 @@ import '../services/supplier_index_service.dart';
 import '../services/enhanced_index_service.dart';
 import '../widgets/suggestions_banner.dart';
 import '../services/supplier_balance_tracker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_settings_service.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -1653,8 +1653,8 @@ class _BoxScreenState extends State<BoxScreen> {
 
 // 1. دالة التحقق من حالة الأدمن (تُستدعى في initState)
   Future<void> _checkAdminStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final adminSeller = prefs.getString('admin_seller');
+    final settings = AppSettingsService();
+    final adminSeller = await settings.getString('admin_seller');
     if (mounted) {
       setState(() {
         _isAdmin = (widget.sellerName == adminSeller);
